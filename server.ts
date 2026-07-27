@@ -1,8 +1,13 @@
 import express from "express";
 import path from "path";
+import cookieParser from "cookie-parser";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import authRouter from "./src/server/routes/auth";
+import favoritesRouter from "./src/server/routes/favorites";
+import { isSupabaseConfigured } from "./src/server/supabase";
+import { apiErrorHandler } from "./src/server/middleware/errorHandler";
 
 dotenv.config();
 
@@ -10,6 +15,17 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+app.use(cookieParser());
+
+// Auth Supabase (Google + magic link) et favoris. Le reste du site reste accessible sans compte.
+app.use("/api/auth", authRouter);
+app.use("/api/favorites", favoritesRouter);
+
+if (!isSupabaseConfigured()) {
+  console.warn(
+    "Supabase non configuré (PROJECT_URL_SUPABASE / SUPABASE_KEY) : /api/auth et /api/favorites répondront 503."
+  );
+}
 
 // Initialize Gemini SDK with telemetry User-Agent header
 const aiApiKey = process.env.GEMINI_API_KEY;
@@ -357,6 +373,10 @@ app.get("/api/compositions", async (_req, res) => {
       .json({ error: "Compositions momentanément indisponibles", sourceUrl: COMPO_URL });
   }
 });
+
+// Placé après les routes /api et avant le service des assets : seules les erreurs
+// non gérées des handlers API remontent ici.
+app.use("/api", apiErrorHandler);
 
 async function startServer() {
   // Vite middleware for development

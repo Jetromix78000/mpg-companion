@@ -8,6 +8,7 @@ import MarketView from "./components/MarketView";
 import ProfileView from "./components/ProfileView";
 import InjuriesView from "./components/InjuriesView";
 import { PlayerAvatar } from "./components/PlayerAvatar";
+import { useAuth } from "./auth/AuthContext";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -27,10 +28,23 @@ import {
   Github,
   MessageSquare,
   Filter,
-  Menu
+  Menu,
+  LogIn,
+  LogOut
 } from "lucide-react";
 
+// Messages associés aux redirections d'auth (?auth_error=...) renvoyées par le serveur.
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  oauth_init: "Connexion Google indisponible pour le moment",
+  oauth_refused: "Connexion Google annulée",
+  missing_code: "Retour de connexion incomplet",
+  exchange_failed: "Session non créée, réessayez",
+  missing_token: "Lien de connexion invalide",
+  link_expired: "Lien de connexion expiré, demandez-en un nouveau"
+};
+
 export default function App() {
+  const { user, requestLogin, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"dashboard" | "market" | "stats" | "injuries">("dashboard");
   const [selectedPlayer, setSelectedPlayer] = useState<Player>(MOCK_PLAYERS[0]); // Default to Mbappé
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,6 +100,21 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toast.visible]);
+
+  // Retour de connexion : le serveur redirige vers /?auth=success ou /?auth_error=...
+  // On informe puis on nettoie l'URL pour ne pas rejouer le message au rechargement.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get("auth_error");
+    const authSuccess = params.get("auth") === "success";
+    if (!authError && !authSuccess) return;
+
+    showToast(
+      authError ? AUTH_ERROR_MESSAGES[authError] ?? "Connexion impossible" : "Connexion réussie",
+      authError ? "warning" : "success"
+    );
+    window.history.replaceState({}, "", window.location.pathname);
+  }, []);
 
   // Close search suggestions on click outside
   useEffect(() => {
@@ -347,6 +376,35 @@ export default function App() {
 
         {/* Navigation Accessories */}
         <div className="flex items-center gap-3">
+          {/* Auth : simple accessoire, aucune rubrique du site n'en dépend */}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span
+                className="hidden sm:inline-block max-w-[160px] truncate text-[11px] font-bold text-on-surface-variant"
+                title={user.email ?? undefined}
+              >
+                {user.email}
+              </span>
+              <button
+                className="p-2 text-on-surface-variant hover:text-white active:scale-95 transition-all"
+                onClick={async () => {
+                  await logout();
+                  showToast("Déconnecté", "success");
+                }}
+                title="Se déconnecter"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              className="hidden sm:flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+              onClick={requestLogin}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Connexion
+            </button>
+          )}
           <button
             className="p-2 text-on-surface-variant hover:text-white relative active:scale-95 transition-all"
             onClick={() => showToast("Aucune nouvelle notification médicale", "success")}

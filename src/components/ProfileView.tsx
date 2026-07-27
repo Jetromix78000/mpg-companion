@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Player } from "../types";
 import { PlayerAvatar } from "./PlayerAvatar";
+import { FavoriteButton } from "./FavoriteButton";
 import {
   Shield,
   Bolt,
@@ -282,6 +283,11 @@ export default function ProfileView({
         </div>
 
         <div className="flex gap-2.5 w-full md:w-auto">
+          <FavoriteButton
+            playerId={player.id}
+            playerName={player.fullName}
+            onShowToast={onShowToast}
+          />
           <button
             className="w-full md:w-auto px-6 py-3 bg-white/5 hover:bg-white/10 text-white font-bold border border-white/10 rounded-xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
             onClick={handleShare}
