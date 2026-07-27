@@ -1,0 +1,241 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "mcp-excalidraw-server",
+  "elements": [
+    {
+      "id": "frontend",
+      "type": "rectangle",
+      "x": 60,
+      "y": 180,
+      "width": 220,
+      "height": 90,
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "Frontend\n(React SPA)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "backend",
+      "type": "rectangle",
+      "x": 380,
+      "y": 180,
+      "width": 220,
+      "height": 90,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "Backend\n(Express)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "router1",
+      "type": "rectangle",
+      "x": 700,
+      "y": 80,
+      "width": 260,
+      "height": 70,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "Router\nGET /api/search-player"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "router2",
+      "type": "rectangle",
+      "x": 700,
+      "y": 300,
+      "width": 260,
+      "height": 70,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "Router\nGET /api/compositions"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "gemini",
+      "type": "rectangle",
+      "x": 1060,
+      "y": 80,
+      "width": 240,
+      "height": 70,
+      "backgroundColor": "#d0bfff",
+      "strokeColor": "#7048e8",
+      "label": {
+        "text": "API Google Gemini"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "football",
+      "type": "rectangle",
+      "x": 1060,
+      "y": 300,
+      "width": 240,
+      "height": 70,
+      "backgroundColor": "#d0bfff",
+      "strokeColor": "#7048e8",
+      "label": {
+        "text": "API Football\n(ligue1.com)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "mrq8aqifhp93e3mxtmb",
+      "type": "arrow",
+      "x": 288,
+      "y": 225,
+      "label": {
+        "text": "HTTP"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          84,
+          0
+        ]
+      ],
+      "start": {
+        "id": "frontend"
+      },
+      "end": {
+        "id": "backend"
+      },
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "mrq8aqifctd5t5h00hg",
+      "type": "arrow",
+      "x": 607.6115561484353,
+      "y": 186.94920242256504,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          106.5950695213113,
+          -34.486640139247726
+        ]
+      ],
+      "start": {
+        "id": "backend"
+      },
+      "end": {
+        "id": "router1"
+      },
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "mrq8aqif20gj5b0vh37",
+      "type": "arrow",
+      "x": 607.6115561484353,
+      "y": 263.050797577435,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          106.5950695213113,
+          34.4866401392477
+        ]
+      ],
+      "start": {
+        "id": "backend"
+      },
+      "end": {
+        "id": "router2"
+      },
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "mrq8aqifkg2fompmj4h",
+      "type": "arrow",
+      "x": 968,
+      "y": 115,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          84,
+          1.4210854715202004e-14
+        ]
+      ],
+      "start": {
+        "id": "router1"
+      },
+      "end": {
+        "id": "gemini"
+      },
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    },
+    {
+      "id": "mrq8aqifohjy8bkaz6",
+      "type": "arrow",
+      "x": 968,
+      "y": 335,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          84,
+          0
+        ]
+      ],
+      "start": {
+        "id": "router2"
+      },
+      "end": {
+        "id": "football"
+      },
+      "createdAt": "2026-07-18T10:33:11.609Z",
+      "updatedAt": "2026-07-18T10:33:11.609Z",
+      "version": 1
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": null
+  }
+}

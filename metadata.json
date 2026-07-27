@@ -1,0 +1,6 @@
+{
+  "name": "MPG Companion",
+  "description": "Compagnon de transferts et statistiques interactif avec tableau de bord, blessures et fiches joueurs pour votre ligue.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

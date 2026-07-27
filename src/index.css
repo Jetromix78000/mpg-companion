@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-title: "Montserrat", sans-serif;
+  --font-display: "Montserrat", sans-serif;
+  
+  --color-pitch-dark: #0A0A0A;
+  --color-surface-elevated: #1E1E1E;
+  --color-surface-glass: rgba(30, 30, 30, 0.75);
+  --color-surface-container: #201f1f;
+  --color-surface-container-low: #1c1b1b;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353534;
+  --color-surface-container-lowest: #0e0e0e;
+  --color-on-surface: #e5e2e1;
+  --color-on-surface-variant: #b9cbb9;
+  --color-muted-text: #8E8E93;
+  --color-primary-container: #00ff87;
+  --color-on-primary-container: #007138;
+  --color-secondary: #9cd769;
+  --color-secondary-container: #386b01;
+  --color-on-secondary-container: #adea79;
+  --color-tertiary-container: #ffd3dd;
+  --color-stat-increase: #00FF87;
+  --color-stat-decrease: #F06292;
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(30, 30, 30, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-slideInLeft {
+    animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00FF87;
+}
+
+/* Hide standard scrollbars for slider lists */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

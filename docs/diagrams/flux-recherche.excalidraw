@@ -1,0 +1,382 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "mcp-excalidraw-server",
+  "elements": [
+    {
+      "id": "start",
+      "type": "ellipse",
+      "x": 370,
+      "y": 40,
+      "width": 220,
+      "height": 60,
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44",
+      "label": {
+        "text": "Saisie recherche\nutilisateur"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "d1",
+      "type": "diamond",
+      "x": 290,
+      "y": 150,
+      "width": 380,
+      "height": 140,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "Match local ?\n(MOCK_PLAYERS)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "b1",
+      "type": "rectangle",
+      "x": 760,
+      "y": 190,
+      "width": 300,
+      "height": 60,
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44",
+      "label": {
+        "text": "Sélection joueur mocké\n→ onglet Stats"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "d2",
+      "type": "diamond",
+      "x": 290,
+      "y": 350,
+      "width": 380,
+      "height": 140,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "Nom d'équipe\nreconnu ?"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "b2",
+      "type": "rectangle",
+      "x": 760,
+      "y": 390,
+      "width": 300,
+      "height": 60,
+      "backgroundColor": "#b2f2bb",
+      "strokeColor": "#2f9e44",
+      "label": {
+        "text": "Filtre joueurs équipe,\nsélectionne le 1er → Stats"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "p1",
+      "type": "rectangle",
+      "x": 330,
+      "y": 550,
+      "width": 300,
+      "height": 60,
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "GET /api/search-player\n(scouting IA)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "d3",
+      "type": "diamond",
+      "x": 290,
+      "y": 660,
+      "width": 380,
+      "height": 150,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "Réponse IA valide ?\n(JSON parsable)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "b3a",
+      "type": "rectangle",
+      "x": 760,
+      "y": 705,
+      "width": 300,
+      "height": 60,
+      "backgroundColor": "#d0bfff",
+      "strokeColor": "#7048e8",
+      "label": {
+        "text": "Fiche joueur réelle\n(Gemini) → Stats"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "b3b",
+      "type": "rectangle",
+      "x": 330,
+      "y": 870,
+      "width": 300,
+      "height": 60,
+      "backgroundColor": "#ffc9c9",
+      "strokeColor": "#c92a2a",
+      "label": {
+        "text": "generateFallbackPlayer()\n→ Stats (jamais bloquant)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwta2f5vkrzlg",
+      "type": "arrow",
+      "x": 480,
+      "y": 108,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          34
+        ]
+      ],
+      "start": {
+        "id": "start"
+      },
+      "end": {
+        "id": "d1"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwtfmbnisfq87",
+      "type": "arrow",
+      "x": 678,
+      "y": 220,
+      "label": {
+        "text": "oui"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          74,
+          2.842170943040401e-14
+        ]
+      ],
+      "start": {
+        "id": "d1"
+      },
+      "end": {
+        "id": "b1"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwty23oedda8o",
+      "type": "arrow",
+      "x": 480,
+      "y": 298,
+      "label": {
+        "text": "non"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          44
+        ]
+      ],
+      "start": {
+        "id": "d1"
+      },
+      "end": {
+        "id": "d2"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwtz38ksfo8gfl",
+      "type": "arrow",
+      "x": 678,
+      "y": 420,
+      "label": {
+        "text": "oui"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          74,
+          0
+        ]
+      ],
+      "start": {
+        "id": "d2"
+      },
+      "end": {
+        "id": "b2"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwt1ke9mwzngy3",
+      "type": "arrow",
+      "x": 480,
+      "y": 498,
+      "label": {
+        "text": "non"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          44
+        ]
+      ],
+      "start": {
+        "id": "d2"
+      },
+      "end": {
+        "id": "p1"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwts755b44libf",
+      "type": "arrow",
+      "x": 480,
+      "y": 618,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          34
+        ]
+      ],
+      "start": {
+        "id": "p1"
+      },
+      "end": {
+        "id": "d3"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwtcz93irvj3fg",
+      "type": "arrow",
+      "x": 678,
+      "y": 735,
+      "label": {
+        "text": "oui"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          74,
+          0
+        ]
+      ],
+      "start": {
+        "id": "d3"
+      },
+      "end": {
+        "id": "b3a"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    },
+    {
+      "id": "mrq87uwt19yp3yhhapm",
+      "type": "arrow",
+      "x": 480,
+      "y": 818,
+      "label": {
+        "text": "non"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          44
+        ]
+      ],
+      "start": {
+        "id": "d3"
+      },
+      "end": {
+        "id": "b3b"
+      },
+      "createdAt": "2026-07-18T10:30:57.343Z",
+      "updatedAt": "2026-07-18T10:30:57.343Z",
+      "version": 1
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": null
+  }
+}

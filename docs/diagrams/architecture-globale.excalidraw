@@ -1,0 +1,548 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "mcp-excalidraw-server",
+  "elements": [
+    {
+      "id": "zone-client",
+      "type": "rectangle",
+      "x": 40,
+      "y": 40,
+      "width": 420,
+      "height": 420,
+      "backgroundColor": "#e7f5ff",
+      "strokeColor": "#1971c2",
+      "strokeStyle": "dashed",
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.495Z",
+      "version": 2
+    },
+    {
+      "id": "zone-client-label",
+      "type": "text",
+      "x": 60,
+      "y": 55,
+      "width": 380,
+      "height": 24,
+      "text": "Navigateur — React SPA",
+      "fontSize": 18,
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "app",
+      "type": "rectangle",
+      "x": 170,
+      "y": 100,
+      "width": 180,
+      "height": 90,
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "App.tsx\n(état global, navigation,\nrecherche, toasts)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.489Z",
+      "version": 2
+    },
+    {
+      "id": "dash",
+      "type": "rectangle",
+      "x": 60,
+      "y": 220,
+      "width": 180,
+      "height": 55,
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "DashboardView"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.491Z",
+      "version": 2
+    },
+    {
+      "id": "market",
+      "type": "rectangle",
+      "x": 260,
+      "y": 220,
+      "width": 180,
+      "height": 55,
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "MarketView"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.492Z",
+      "version": 2
+    },
+    {
+      "id": "profile",
+      "type": "rectangle",
+      "x": 60,
+      "y": 300,
+      "width": 180,
+      "height": 55,
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "ProfileView"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.494Z",
+      "version": 2
+    },
+    {
+      "id": "injuries",
+      "type": "rectangle",
+      "x": 260,
+      "y": 300,
+      "width": 180,
+      "height": 55,
+      "backgroundColor": "#a5d8ff",
+      "strokeColor": "#1971c2",
+      "label": {
+        "text": "InjuriesView"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.494Z",
+      "version": 2
+    },
+    {
+      "id": "mrq84dubhly3sdtjc2h",
+      "type": "arrow",
+      "x": 205.85445339197446,
+      "y": 195.45380479384198,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -20.489394588826997,
+          19.092390412316036
+        ]
+      ],
+      "start": {
+        "id": "app"
+      },
+      "end": {
+        "id": "dash"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.491Z",
+      "version": 3
+    },
+    {
+      "id": "mrq84dubji0k2igztyh",
+      "type": "arrow",
+      "x": 304.79060450767196,
+      "y": 196.0115218004042,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          15.784644643192678,
+          17.97695639919158
+        ]
+      ],
+      "start": {
+        "id": "app"
+      },
+      "end": {
+        "id": "market"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.492Z",
+      "version": 3
+    },
+    {
+      "id": "mrq84dubhk8n2lhlq0p",
+      "type": "arrow",
+      "x": 228.74695194184312,
+      "y": 196.85164791466937,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -58.04184908916571,
+          96.29670417066123
+        ]
+      ],
+      "start": {
+        "id": "app"
+      },
+      "end": {
+        "id": "profile"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.494Z",
+      "version": 3
+    },
+    {
+      "id": "mrq84dub0c7afdz7w7fo",
+      "type": "arrow",
+      "x": 285.73012069488135,
+      "y": 197.17496696462055,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          47.16989559653865,
+          95.65006607075892
+        ]
+      ],
+      "start": {
+        "id": "app"
+      },
+      "end": {
+        "id": "injuries"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.494Z",
+      "version": 3
+    },
+    {
+      "id": "zone-server",
+      "type": "rectangle",
+      "x": 480,
+      "y": 40,
+      "width": 360,
+      "height": 430,
+      "backgroundColor": "#fff3bf",
+      "strokeColor": "#e8590c",
+      "strokeStyle": "dashed",
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.497Z",
+      "version": 2
+    },
+    {
+      "id": "zone-server-label",
+      "type": "text",
+      "x": 500,
+      "y": 55,
+      "width": 320,
+      "height": 24,
+      "text": "Serveur — Express (server.ts)",
+      "fontSize": 18,
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "search-ep",
+      "type": "rectangle",
+      "x": 520,
+      "y": 120,
+      "width": 280,
+      "height": 55,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "GET /api/search-player"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "compo-ep",
+      "type": "rectangle",
+      "x": 520,
+      "y": 210,
+      "width": 280,
+      "height": 55,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "GET /api/compositions"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "cache",
+      "type": "ellipse",
+      "x": 530,
+      "y": 300,
+      "width": 260,
+      "height": 110,
+      "backgroundColor": "#ffe066",
+      "strokeColor": "#e8590c",
+      "label": {
+        "text": "Cache compositions\nTTL 6h, mémoire"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.496Z",
+      "version": 2
+    },
+    {
+      "id": "mrq84dub4l4e1bvjzb5",
+      "type": "arrow",
+      "x": 660,
+      "y": 273,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          19
+        ]
+      ],
+      "start": {
+        "id": "compo-ep"
+      },
+      "end": {
+        "id": "cache"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.496Z",
+      "version": 2
+    },
+    {
+      "id": "zone-external",
+      "type": "rectangle",
+      "x": 880,
+      "y": 40,
+      "width": 340,
+      "height": 260,
+      "backgroundColor": "#f3f0ff",
+      "strokeColor": "#7048e8",
+      "strokeStyle": "dashed",
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "zone-external-label",
+      "type": "text",
+      "x": 900,
+      "y": 55,
+      "width": 300,
+      "height": 24,
+      "text": "Services externes",
+      "fontSize": 18,
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "gemini",
+      "type": "rectangle",
+      "x": 920,
+      "y": 120,
+      "width": 260,
+      "height": 60,
+      "backgroundColor": "#d0bfff",
+      "strokeColor": "#7048e8",
+      "label": {
+        "text": "Google Gemini API\n(+ Google Search grounding)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "ligue1",
+      "type": "rectangle",
+      "x": 920,
+      "y": 210,
+      "width": 260,
+      "height": 45,
+      "backgroundColor": "#d0bfff",
+      "strokeColor": "#7048e8",
+      "label": {
+        "text": "ligue1.com (scraping HTML)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "mrq84dubxpc3bt2in3",
+      "type": "arrow",
+      "x": 357.9998437545775,
+      "y": 145.6124990234661,
+      "label": {
+        "text": "fetch"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          154.00031249084503,
+          0.9625019530678003
+        ]
+      ],
+      "start": {
+        "id": "app"
+      },
+      "end": {
+        "id": "search-ep"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.489Z",
+      "version": 2
+    },
+    {
+      "id": "mrq84dubi5ooddp5k1k",
+      "type": "arrow",
+      "x": 357.79430772404004,
+      "y": 167.61493366118427,
+      "label": {
+        "text": "fetch"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          175.49246563300102,
+          40.582632677631466
+        ]
+      ],
+      "start": {
+        "id": "app"
+      },
+      "end": {
+        "id": "compo-ep"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:44.489Z",
+      "version": 2
+    },
+    {
+      "id": "mrq84dub3mx7nzu76v9",
+      "type": "arrow",
+      "x": 807.9998356395164,
+      "y": 148.4487168951251,
+      "label": {
+        "text": "prompt"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          104.00032872096722,
+          0.6666687738523649
+        ]
+      ],
+      "start": {
+        "id": "search-ep"
+      },
+      "end": {
+        "id": "gemini"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "mrq84dubv4y5rzcvwu",
+      "type": "arrow",
+      "x": 807.9993426188411,
+      "y": 235.60257253052768,
+      "label": {
+        "text": "scraping"
+      },
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          104.00131476231786,
+          -1.3333501892605284
+        ]
+      ],
+      "start": {
+        "id": "compo-ep"
+      },
+      "end": {
+        "id": "ligue1"
+      },
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "fallback",
+      "type": "rectangle",
+      "x": 110,
+      "y": 460,
+      "width": 280,
+      "height": 60,
+      "backgroundColor": "#ffc9c9",
+      "strokeColor": "#c92a2a",
+      "label": {
+        "text": "generateFallbackPlayer()\n(données mockées réalistes)"
+      },
+      "fillStyle": "solid",
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    },
+    {
+      "id": "mrq84dub2yavjpnernl",
+      "type": "arrow",
+      "x": 660,
+      "y": 175,
+      "strokeStyle": "dashed",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          275
+        ],
+        [
+          -410,
+          275
+        ],
+        [
+          -410,
+          285
+        ]
+      ],
+      "elbowed": true,
+      "createdAt": "2026-07-18T10:28:15.253Z",
+      "updatedAt": "2026-07-18T10:28:15.253Z",
+      "version": 1
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": null
+  }
+}
