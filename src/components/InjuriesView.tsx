@@ -2,17 +2,7 @@ import React, { useState, useMemo } from "react";
 import { InjuryItem, InjuryStatus, Player } from "../types";
 import { MOCK_INJURIES, MOCK_CLUBS_BY_LEAGUE, MOCK_PLAYERS } from "../data";
 import { PlayerAvatar } from "./PlayerAvatar";
-import { 
-  HeartCrack, 
-  Calendar, 
-  AlertTriangle, 
-  Search, 
-  ChevronRight, 
-  Filter, 
-  TrendingDown, 
-  RefreshCw,
-  Globe
-} from "lucide-react";
+import { HeartCrack, Calendar, Search, Globe } from "lucide-react";
 
 interface InjuriesViewProps {
   onSelectPlayer: (player: Player) => void;
@@ -20,20 +10,31 @@ interface InjuriesViewProps {
   globalTeamFilter?: string | null;
 }
 
-export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFilter }: InjuriesViewProps) {
+export default function InjuriesView({
+  onSelectPlayer,
+  onShowToast,
+  globalTeamFilter,
+}: InjuriesViewProps) {
   const [selectedLeague, setSelectedLeague] = useState("Tous les championnats");
   const [selectedClub, setSelectedClub] = useState("Tous les clubs");
-  const [activeStatusFilter, setActiveStatusFilter] = useState<"Tous" | "Absent" | "Reprise" | "Tous">("Tous");
+  const [activeStatusFilter, setActiveStatusFilter] = useState<
+    "Tous" | "Absent" | "Reprise" | "Tous"
+  >("Tous");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Count of injuries per league for display in the league filter cards
   const leagueCounts = useMemo(() => {
     const counts: Record<string, number> = {
       "Tous les championnats": MOCK_INJURIES.length,
-      "Premier League": MOCK_INJURIES.filter(i => i.league === "Premier League").length,
-      "Ligue 1 McDonald's": MOCK_INJURIES.filter(i => i.league.toLowerCase().includes("ligue 1") || i.league.toLowerCase().includes("macdonald") || i.league.toLowerCase().includes("mcdonald")).length,
-      "La Liga": MOCK_INJURIES.filter(i => i.league === "La Liga").length,
-      "Serie A": MOCK_INJURIES.filter(i => i.league === "Serie A").length,
+      "Premier League": MOCK_INJURIES.filter((i) => i.league === "Premier League").length,
+      "Ligue 1 McDonald's": MOCK_INJURIES.filter(
+        (i) =>
+          i.league.toLowerCase().includes("ligue 1") ||
+          i.league.toLowerCase().includes("macdonald") ||
+          i.league.toLowerCase().includes("mcdonald"),
+      ).length,
+      "La Liga": MOCK_INJURIES.filter((i) => i.league === "La Liga").length,
+      "Serie A": MOCK_INJURIES.filter((i) => i.league === "Serie A").length,
     };
     return counts;
   }, []);
@@ -41,16 +42,26 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
   // Cascading club selections based on selected league
   const availableClubs = useMemo(() => {
     let key = selectedLeague;
-    if (key.toLowerCase().includes("ligue 1") || key.toLowerCase().includes("macdonald") || key.toLowerCase().includes("mcdonald")) {
+    if (
+      key.toLowerCase().includes("ligue 1") ||
+      key.toLowerCase().includes("macdonald") ||
+      key.toLowerCase().includes("mcdonald")
+    ) {
       key = "Ligue 1 McDonald's";
     }
-    const clubs = MOCK_CLUBS_BY_LEAGUE[key] || MOCK_CLUBS_BY_LEAGUE["Ligue 1"] || ["Tous les clubs"];
-    // Reset selected club if it's no longer available
-    if (!clubs.includes(selectedClub)) {
+    return MOCK_CLUBS_BY_LEAGUE[key] ||
+      MOCK_CLUBS_BY_LEAGUE["Ligue 1"] || ["Tous les clubs"];
+  }, [selectedLeague]);
+
+  // Reset le club sélectionné s'il n'est plus disponible (ajustement pendant le render,
+  // pas dans un effect, pour éviter un cycle de rendu supplémentaire).
+  const [prevAvailableClubs, setPrevAvailableClubs] = useState(availableClubs);
+  if (availableClubs !== prevAvailableClubs) {
+    setPrevAvailableClubs(availableClubs);
+    if (!availableClubs.includes(selectedClub)) {
       setSelectedClub("Tous les clubs");
     }
-    return clubs;
-  }, [selectedLeague, selectedClub]);
+  }
 
   // Filters the mock injuries database
   const filteredInjuries = useMemo(() => {
@@ -66,10 +77,16 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
         if (selectedLeague !== "Tous les championnats") {
           const normalizedSelected = selectedLeague.toLowerCase();
           const normalizedInjuryLeague = injury.league.toLowerCase();
-          
-          const isLigue1Selected = normalizedSelected.includes("ligue 1") || normalizedSelected.includes("macdonald") || normalizedSelected.includes("mcdonald");
-          const isLigue1Injury = normalizedInjuryLeague.includes("ligue 1") || normalizedInjuryLeague.includes("macdonald") || normalizedInjuryLeague.includes("mcdonald");
-          
+
+          const isLigue1Selected =
+            normalizedSelected.includes("ligue 1") ||
+            normalizedSelected.includes("macdonald") ||
+            normalizedSelected.includes("mcdonald");
+          const isLigue1Injury =
+            normalizedInjuryLeague.includes("ligue 1") ||
+            normalizedInjuryLeague.includes("macdonald") ||
+            normalizedInjuryLeague.includes("mcdonald");
+
           if (isLigue1Selected) {
             if (!isLigue1Injury) return false;
           } else if (injury.league !== selectedLeague) {
@@ -102,19 +119,23 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
       }
       return true;
     });
-  }, [selectedLeague, selectedClub, activeStatusFilter, searchQuery]);
+  }, [selectedLeague, selectedClub, activeStatusFilter, searchQuery, globalTeamFilter]);
 
   const handleInjuryRowClick = (injury: InjuryItem) => {
     const playerMatch = MOCK_PLAYERS.find(
-      (p) => p.fullName.toLowerCase().includes(injury.playerName.toLowerCase()) ||
-             injury.playerName.toLowerCase().includes(p.name.toLowerCase())
+      (p) =>
+        p.fullName.toLowerCase().includes(injury.playerName.toLowerCase()) ||
+        injury.playerName.toLowerCase().includes(p.name.toLowerCase()),
     );
 
     if (playerMatch) {
       onSelectPlayer(playerMatch);
       onShowToast(`Chargement du profil de ${playerMatch.fullName}`, "success");
     } else {
-      onShowToast(`Profil complet de ${injury.playerName} indisponible dans le prototype`, "warning");
+      onShowToast(
+        `Profil complet de ${injury.playerName} indisponible dans le prototype`,
+        "warning",
+      );
     }
   };
 
@@ -132,7 +153,8 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
             Centre des Blessures
           </h1>
           <p className="text-on-surface-variant text-sm font-medium max-w-xl mt-1">
-            Intelligence médicale en temps réel, délais de récupération et pronostics de disponibilité pour composer votre équipe MPG.
+            Intelligence médicale en temps réel, délais de récupération et pronostics de
+            disponibilité pour composer votre équipe MPG.
           </p>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -162,17 +184,49 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
         <label className="text-[10px] font-black text-muted-text uppercase tracking-widest ml-1">
           Filtre rapide par Ligue
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="league-quick-filters">
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+          id="league-quick-filters"
+        >
           {[
-            { id: "Tous les championnats", name: "Tous les championnats", label: "Tous", isGlobe: true },
-            { id: "Ligue 1 McDonald's", name: "Ligue 1 plus macdonald", label: "Ligue 1 McDonald's", logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/9.png" },
-            { id: "Premier League", name: "Premier League", label: "Premier League", logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png" },
-            { id: "La Liga", name: "La Liga", label: "La Liga", logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png" },
-            { id: "Serie A", name: "Serie A", label: "Serie A", logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png" }
+            {
+              id: "Tous les championnats",
+              name: "Tous les championnats",
+              label: "Tous",
+              isGlobe: true,
+            },
+            {
+              id: "Ligue 1 McDonald's",
+              name: "Ligue 1 plus macdonald",
+              label: "Ligue 1 McDonald's",
+              logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/9.png",
+            },
+            {
+              id: "Premier League",
+              name: "Premier League",
+              label: "Premier League",
+              logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png",
+            },
+            {
+              id: "La Liga",
+              name: "La Liga",
+              label: "La Liga",
+              logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png",
+            },
+            {
+              id: "Serie A",
+              name: "Serie A",
+              label: "Serie A",
+              logoUrl: "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png",
+            },
           ].map((item) => {
             const isLigue1 = item.id.includes("Ligue 1");
-            const isSelected = selectedLeague === item.id || 
-              (isLigue1 && (selectedLeague.toLowerCase().includes("ligue 1") || selectedLeague.toLowerCase().includes("macdonald") || selectedLeague.toLowerCase().includes("mcdonald")));
+            const isSelected =
+              selectedLeague === item.id ||
+              (isLigue1 &&
+                (selectedLeague.toLowerCase().includes("ligue 1") ||
+                  selectedLeague.toLowerCase().includes("macdonald") ||
+                  selectedLeague.toLowerCase().includes("mcdonald")));
             const count = leagueCounts[isLigue1 ? "Ligue 1 McDonald's" : item.id] || 0;
             return (
               <button
@@ -194,16 +248,18 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
                     </div>
                   ) : (
                     <div className="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center shrink-0 shadow-sm border border-white/5">
-                      <img 
-                        src={item.logoUrl} 
-                        className="w-full h-full object-contain" 
-                        alt={item.label} 
-                        referrerPolicy="no-referrer" 
+                      <img
+                        src={item.logoUrl}
+                        className="w-full h-full object-contain"
+                        alt={item.label}
+                        referrerPolicy="no-referrer"
                       />
                     </div>
                   )}
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-black font-mono shrink-0 ${isSelected ? 'bg-primary-container/20 text-primary-container' : 'bg-white/5 text-muted-text'}`}>
-                    {count} {count > 1 ? 'blessés' : 'blessé'}
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-black font-mono shrink-0 ${isSelected ? "bg-primary-container/20 text-primary-container" : "bg-white/5 text-muted-text"}`}
+                  >
+                    {count} {count > 1 ? "blessés" : "blessé"}
                   </span>
                 </div>
                 <div className="mt-2.5">
@@ -380,10 +436,10 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
                           injury.status === "Absent"
                             ? "bg-stat-decrease/10 text-stat-decrease border-stat-decrease/20"
                             : injury.status === "Incertain"
-                            ? "bg-secondary/15 text-secondary border-secondary/20"
-                            : injury.status === "Reprise"
-                            ? "bg-primary-container/15 text-primary-container border-primary-container/20"
-                            : "bg-white/5 text-muted-text border-white/10"
+                              ? "bg-secondary/15 text-secondary border-secondary/20"
+                              : injury.status === "Reprise"
+                                ? "bg-primary-container/15 text-primary-container border-primary-container/20"
+                                : "bg-white/5 text-muted-text border-white/10"
                         }`}
                       >
                         <span
@@ -391,10 +447,10 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
                             injury.status === "Absent"
                               ? "bg-stat-decrease animate-pulse"
                               : injury.status === "Incertain"
-                              ? "bg-secondary"
-                              : injury.status === "Reprise"
-                              ? "bg-primary-container"
-                              : "bg-muted-text"
+                                ? "bg-secondary"
+                                : injury.status === "Reprise"
+                                  ? "bg-primary-container"
+                                  : "bg-muted-text"
                           }`}
                         ></span>
                         {injury.status}
@@ -416,8 +472,8 @@ export default function InjuriesView({ onSelectPlayer, onShowToast, globalTeamFi
                               injury.confidence > 75
                                 ? "bg-primary-container"
                                 : injury.confidence > 40
-                                ? "bg-secondary"
-                                : "bg-stat-decrease"
+                                  ? "bg-secondary"
+                                  : "bg-stat-decrease"
                             }`}
                             style={{ width: `${injury.confidence}%` }}
                           ></div>

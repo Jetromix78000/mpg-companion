@@ -28,10 +28,10 @@ export function normalizeText(text: string): string {
  */
 export function matchPlayer(
   player: { fullName: string; name?: string; team?: string },
-  query: string
+  query: string,
 ): boolean {
   if (!query) return false;
-  
+
   const normalizedQuery = normalizeText(query);
   if (!normalizedQuery) return false;
 
@@ -43,9 +43,10 @@ export function matchPlayer(
   const queryTerms = normalizedQuery.split(" ").filter(Boolean);
 
   // All terms must match either the name, full name, or team
-  return queryTerms.every(term => 
-    normalizedFullName.includes(term) || 
-    normalizedName.includes(term) || 
-    normalizedTeam.includes(term)
+  return queryTerms.every(
+    (term) =>
+      normalizedFullName.includes(term) ||
+      normalizedName.includes(term) ||
+      normalizedTeam.includes(term),
   );
 }

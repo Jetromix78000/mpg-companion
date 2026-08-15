@@ -3,7 +3,14 @@ import { Player } from "../types";
 import { MOCK_PLAYERS } from "../data";
 import { POPULAR_PLAYERS, SuggestionPlayer } from "../popularPlayers";
 import { PlayerAvatar } from "./PlayerAvatar";
-import { Search, ArrowUpRight, ChevronLeft, ChevronRight, AlertCircle, Sparkles, Trophy } from "lucide-react";
+import {
+  Search,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  Trophy,
+} from "lucide-react";
 import { matchPlayer, normalizeText } from "../utils/search";
 
 interface DashboardViewProps {
@@ -22,12 +29,20 @@ export default function DashboardView({
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const heroSearchRef = useRef<HTMLDivElement>(null);
 
+  // Reset la suggestion active quand la recherche change (ajustement pendant le render,
+  // pas dans un effect, pour éviter un cycle de rendu supplémentaire).
+  const [prevHeroSearch, setPrevHeroSearch] = useState(heroSearch);
+  if (heroSearch !== prevHeroSearch) {
+    setPrevHeroSearch(heroSearch);
+    setActiveSuggestionIndex(0);
+  }
+
   // De-duplicate suggestions to keep searches optimal and clean
   const ALL_SUGGESTION_SEEDS = useMemo(() => {
     const seeds: SuggestionPlayer[] = [];
     const seenIds = new Set<string>();
 
-    MOCK_PLAYERS.forEach(p => {
+    MOCK_PLAYERS.forEach((p) => {
       seenIds.add(p.id);
       seeds.push({
         id: p.id,
@@ -37,11 +52,11 @@ export default function DashboardView({
         positionLong: p.positionLong,
         position: p.position,
         form: p.form,
-        avatarUrl: p.avatarUrl
+        avatarUrl: p.avatarUrl,
       });
     });
 
-    POPULAR_PLAYERS.forEach(p => {
+    POPULAR_PLAYERS.forEach((p) => {
       if (!seenIds.has(p.id)) {
         seenIds.add(p.id);
         seeds.push(p);
@@ -57,11 +72,6 @@ export default function DashboardView({
     return ALL_SUGGESTION_SEEDS.filter((p) => matchPlayer(p, heroSearch));
   }, [heroSearch, ALL_SUGGESTION_SEEDS]);
 
-  // Reset selected active suggestion when suggestions search results change
-  useEffect(() => {
-    setActiveSuggestionIndex(0);
-  }, [heroSearch]);
-
   // Find candidate for inline completion hint
   const bestMatch = filteredSuggestions[0];
   const inlineCompletion = useMemo(() => {
@@ -75,7 +85,7 @@ export default function DashboardView({
     if (normFull.startsWith(normQuery)) {
       return {
         text: bestMatch.fullName.slice(heroSearch.length),
-        show: true
+        show: true,
       };
     }
     // If query matches the start of the last name (e.g., "mbappe" matches "Kylian Mbappé")
@@ -84,7 +94,7 @@ export default function DashboardView({
       if (lastIndex !== -1) {
         return {
           text: bestMatch.fullName.slice(lastIndex + heroSearch.length),
-          show: true
+          show: true,
         };
       }
     }
@@ -105,10 +115,10 @@ export default function DashboardView({
   const handleSuggestionClick = (player: SuggestionPlayer) => {
     setHeroSearch("");
     setShowHeroSuggestions(false);
-    
-    const isFullPlayer = MOCK_PLAYERS.some(p => p.id === player.id);
+
+    const isFullPlayer = MOCK_PLAYERS.some((p) => p.id === player.id);
     if (isFullPlayer) {
-      const fullPlayer = MOCK_PLAYERS.find(p => p.id === player.id)!;
+      const fullPlayer = MOCK_PLAYERS.find((p) => p.id === player.id)!;
       onSelectPlayer(fullPlayer);
     } else {
       onSearchQuery(player.fullName);
@@ -131,13 +141,15 @@ export default function DashboardView({
       e.preventDefault();
       if (filteredSuggestions.length > 0) {
         setShowHeroSuggestions(true);
-        setActiveSuggestionIndex(prev => (prev + 1) % filteredSuggestions.length);
+        setActiveSuggestionIndex((prev) => (prev + 1) % filteredSuggestions.length);
       }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (filteredSuggestions.length > 0) {
         setShowHeroSuggestions(true);
-        setActiveSuggestionIndex(prev => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length);
+        setActiveSuggestionIndex(
+          (prev) => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length,
+        );
       }
     } else if (e.key === "Escape") {
       setShowHeroSuggestions(false);
@@ -157,7 +169,7 @@ export default function DashboardView({
       <section
         className="relative h-[280px] md:h-[340px] rounded-2xl flex flex-col justify-center items-center px-4 md:px-8 border border-white/5 shadow-2xl"
         style={{
-          background: "linear-gradient(rgba(10, 10, 10, 0.75), rgba(10, 10, 10, 0.95))"
+          background: "linear-gradient(rgba(10, 10, 10, 0.75), rgba(10, 10, 10, 0.95))",
         }}
       >
         {/* Background Image with stadium brightness overlay — clipped independently */}
@@ -169,7 +181,6 @@ export default function DashboardView({
             referrerPolicy="no-referrer"
           />
         </div>
-
 
         <div className="relative z-10 w-full max-w-2xl text-center space-y-4 px-2">
           <h1 className="font-display-lg text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-none drop-shadow-sm">
@@ -183,7 +194,7 @@ export default function DashboardView({
             <form onSubmit={handleHeroSearchSubmit}>
               <div className="w-full h-14 md:h-16 bg-surface-glass border border-white/10 rounded-full flex items-center relative group backdrop-blur-xl focus-within:ring-2 focus-within:ring-primary-container/40 focus-within:border-primary-container/30 transition-all shadow-inner">
                 <Search className="absolute left-5 text-on-surface-variant group-focus-within:text-primary-container transition-colors w-5 h-5 cursor-pointer z-20" />
-                
+
                 {/* Autocomplete Ghost Text */}
                 {inlineCompletion.show && inlineCompletion.text && (
                   <div className="absolute left-14 text-sm md:text-base text-white/25 pointer-events-none select-none font-sans font-medium whitespace-pre z-10 flex items-center">
@@ -221,7 +232,9 @@ export default function DashboardView({
                 <div className="py-2 text-left">
                   <p className="px-5 py-2 text-[11px] font-bold text-muted-text uppercase tracking-widest border-b border-white/5 flex justify-between items-center">
                     <span>Résultats Instantanés ({filteredSuggestions.length})</span>
-                    <span className="text-[9px] font-medium text-white/40 font-mono normal-case">↑↓ pour naviguer • Entrée pour sélectionner</span>
+                    <span className="text-[9px] font-medium text-white/40 font-mono normal-case">
+                      ↑↓ pour naviguer • Entrée pour sélectionner
+                    </span>
                   </p>
                   {filteredSuggestions.length > 0 ? (
                     <div className="max-h-[320px] overflow-y-auto">
@@ -244,9 +257,13 @@ export default function DashboardView({
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`font-bold leading-tight transition-colors truncate ${
-                                isActive ? "text-primary-container" : "text-on-surface group-hover:text-primary-container"
-                              }`}>
+                              <p
+                                className={`font-bold leading-tight transition-colors truncate ${
+                                  isActive
+                                    ? "text-primary-container"
+                                    : "text-on-surface group-hover:text-primary-container"
+                                }`}
+                              >
                                 {player.fullName}
                               </p>
                               <p className="text-xs text-muted-text uppercase tracking-wider mt-0.5 font-medium">
@@ -254,14 +271,22 @@ export default function DashboardView({
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold transition-all ${
-                                isActive ? "bg-primary-container text-pitch-dark" : "bg-primary-container/10 text-primary-container"
-                              }`}>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded font-mono font-bold transition-all ${
+                                  isActive
+                                    ? "bg-primary-container text-pitch-dark"
+                                    : "bg-primary-container/10 text-primary-container"
+                                }`}
+                              >
                                 {player.form} Forme
                               </span>
-                              <ArrowUpRight className={`w-4 h-4 transition-colors shrink-0 ${
-                                isActive ? "text-primary-container translate-x-0.5 -translate-y-0.5" : "text-muted-text group-hover:text-primary-container"
-                              }`} />
+                              <ArrowUpRight
+                                className={`w-4 h-4 transition-colors shrink-0 ${
+                                  isActive
+                                    ? "text-primary-container translate-x-0.5 -translate-y-0.5"
+                                    : "text-muted-text group-hover:text-primary-container"
+                                }`}
+                              />
                             </div>
                           </div>
                         );
@@ -393,7 +418,8 @@ export default function DashboardView({
                       {player.fullName}
                     </p>
                     <p className="text-muted-text text-[11px] font-semibold mt-0.5">
-                      {player.team} • <span className="text-primary-container font-bold">{player.form}</span> FORME
+                      {player.team} •{" "}
+                      <span className="text-primary-container font-bold">{player.form}</span> FORME
                     </p>
                   </div>
 
@@ -433,19 +459,26 @@ export default function DashboardView({
                   Mbappé incertain pour le prochain match
                 </h3>
                 <p className="text-on-surface-variant text-xs leading-relaxed font-medium">
-                  Les rapports du staff médical suggèrent une légère fatigue musculaire après l'enchaînement de matchs. Probabilité de titularisation estimée à seulement <span className="text-stat-decrease font-bold text-sm">35%</span>.
+                  Les rapports du staff médical suggèrent une légère fatigue musculaire après
+                  l'enchaînement de matchs. Probabilité de titularisation estimée à seulement{" "}
+                  <span className="text-stat-decrease font-bold text-sm">35%</span>.
                 </p>
                 <div className="flex gap-2 pt-2">
                   <button
                     className="flex-1 px-4 py-2.5 bg-stat-decrease/20 text-stat-decrease hover:bg-stat-decrease/30 active:scale-95 text-xs font-bold rounded-xl transition-all border border-stat-decrease/30"
-                    onClick={() => onShowToast("Simulation de transfert out: Mbappé placé sur la liste des ventes", "warning")}
+                    onClick={() =>
+                      onShowToast(
+                        "Simulation de transfert out: Mbappé placé sur la liste des ventes",
+                        "warning",
+                      )
+                    }
                   >
                     Vendre d'urgence
                   </button>
                   <button
                     className="flex-1 px-4 py-2.5 bg-surface-container-high text-white hover:bg-surface-variant hover:text-white active:scale-95 text-xs font-bold rounded-xl transition-all border border-white/5"
                     onClick={() => {
-                      const mbappe = MOCK_PLAYERS.find(p => p.id === "mbappe");
+                      const mbappe = MOCK_PLAYERS.find((p) => p.id === "mbappe");
                       if (mbappe) onSelectPlayer(mbappe);
                     }}
                   >
@@ -465,7 +498,12 @@ export default function DashboardView({
               </h3>
 
               <div className="space-y-4 font-medium">
-                <div className="flex gap-3 items-start group cursor-pointer" onClick={() => onShowToast("Analyse détaillée de Kane bientôt disponible", "success")}>
+                <div
+                  className="flex gap-3 items-start group cursor-pointer"
+                  onClick={() =>
+                    onShowToast("Analyse détaillée de Kane bientôt disponible", "success")
+                  }
+                >
                   <div className="w-2 h-2 mt-2 rounded-full bg-primary-container shadow-[0_0_8px_#00FF87] shrink-0"></div>
                   <div className="space-y-0.5">
                     <p className="text-xs text-white group-hover:text-primary-container transition-colors">
@@ -477,7 +515,10 @@ export default function DashboardView({
                   </div>
                 </div>
 
-                <div className="flex gap-3 items-start group cursor-pointer" onClick={() => onShowToast("Fin du mercato rumeur simulée dans 48h", "warning")}>
+                <div
+                  className="flex gap-3 items-start group cursor-pointer"
+                  onClick={() => onShowToast("Fin du mercato rumeur simulée dans 48h", "warning")}
+                >
                   <div className="w-2 h-2 mt-2 rounded-full bg-muted-text shrink-0"></div>
                   <div className="space-y-0.5">
                     <p className="text-xs text-white group-hover:text-white transition-colors">
@@ -489,7 +530,12 @@ export default function DashboardView({
                   </div>
                 </div>
 
-                <div className="flex gap-3 items-start group cursor-pointer" onClick={() => onShowToast("Moyenne de buts de la ligue : 2.1 par match", "warning")}>
+                <div
+                  className="flex gap-3 items-start group cursor-pointer"
+                  onClick={() =>
+                    onShowToast("Moyenne de buts de la ligue : 2.1 par match", "warning")
+                  }
+                >
                   <div className="w-2 h-2 mt-2 rounded-full bg-stat-decrease shadow-[0_0_8px_#F06292] shrink-0"></div>
                   <div className="space-y-0.5">
                     <p className="text-xs text-white group-hover:text-stat-decrease transition-colors">
@@ -504,7 +550,9 @@ export default function DashboardView({
 
               <button
                 className="w-full py-2.5 bg-surface-container-high hover:bg-surface-variant text-white text-xs font-bold rounded-xl transition-all border border-white/5"
-                onClick={() => onShowToast("Aucune autre news disponible pour le moment", "success")}
+                onClick={() =>
+                  onShowToast("Aucune autre news disponible pour le moment", "success")
+                }
               >
                 Voir toutes les news
               </button>

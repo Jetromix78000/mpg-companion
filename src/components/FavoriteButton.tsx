@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Star, Loader2 } from "lucide-react";
-import { useFavorites } from "../favorites/FavoritesContext";
-import { useAuth } from "../auth/AuthContext";
+import { useFavorites } from "../favorites/useFavorites";
+import { useAuth } from "../auth/useAuth";
 
 interface FavoriteButtonProps {
   playerId: string;
@@ -24,7 +24,7 @@ export function FavoriteButton({ playerId, playerName, onShowToast }: FavoriteBu
       if (user) {
         onShowToast(
           active ? `${playerName} retiré des favoris` : `${playerName} ajouté à vos favoris`,
-          "success"
+          "success",
         );
       }
     } catch {

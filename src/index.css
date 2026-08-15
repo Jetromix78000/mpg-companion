@@ -1,13 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap");
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-title: "Montserrat", sans-serif;
   --font-display: "Montserrat", sans-serif;
-  
-  --color-pitch-dark: #0A0A0A;
-  --color-surface-elevated: #1E1E1E;
+
+  --color-pitch-dark: #0a0a0a;
+  --color-surface-elevated: #1e1e1e;
   --color-surface-glass: rgba(30, 30, 30, 0.75);
   --color-surface-container: #201f1f;
   --color-surface-container-low: #1c1b1b;
@@ -16,15 +16,15 @@
   --color-surface-container-lowest: #0e0e0e;
   --color-on-surface: #e5e2e1;
   --color-on-surface-variant: #b9cbb9;
-  --color-muted-text: #8E8E93;
+  --color-muted-text: #8e8e93;
   --color-primary-container: #00ff87;
   --color-on-primary-container: #007138;
   --color-secondary: #9cd769;
   --color-secondary-container: #386b01;
   --color-on-secondary-container: #adea79;
   --color-tertiary-container: #ffd3dd;
-  --color-stat-increase: #00FF87;
-  --color-stat-decrease: #F06292;
+  --color-stat-increase: #00ff87;
+  --color-stat-decrease: #f06292;
   --color-error: #ffb4ab;
   --color-error-container: #93000a;
 }
@@ -36,7 +36,7 @@
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
-  
+
   .animate-fadeIn {
     animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -73,14 +73,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: #0a0a0a;
 }
 ::-webkit-scrollbar-thumb {
   background: #2a2a2a;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00FF87;
+  background: #00ff87;
 }
 
 /* Hide standard scrollbars for slider lists */
@@ -88,6 +88,6 @@
   display: none;
 }
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

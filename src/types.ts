@@ -3,14 +3,14 @@ export enum PlayerPosition {
   Def = "D",
   Mid = "M",
   Fwd = "A",
-  Ent = "Coach"
+  Ent = "Coach",
 }
 
 export enum InjuryStatus {
   Absent = "Absent",
   Incertain = "Incertain",
   Reprise = "Reprise",
-  Suspendu = "Suspendu"
+  Suspendu = "Suspendu",
 }
 
 export interface Player {

@@ -1,5 +1,3 @@
-import { Player } from "./types";
-
 // Dynamic search suggestion definition
 export interface SuggestionPlayer {
   id: string;
@@ -21,7 +19,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 94,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Lamine_Yamal_2024.jpg/250px-Lamine_Yamal_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Lamine_Yamal_2024.jpg/250px-Lamine_Yamal_2024.jpg",
   },
   {
     id: "kane",
@@ -31,7 +30,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant de pointe",
     position: "A",
     form: 91,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Harry_Kane_2024.jpg/250px-Harry_Kane_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Harry_Kane_2024.jpg/250px-Harry_Kane_2024.jpg",
   },
   {
     id: "messi",
@@ -41,7 +41,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Créateur",
     position: "A",
     form: 88,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Lionel_Messi_20180626.jpg/250px-Lionel_Messi_20180626.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Lionel_Messi_20180626.jpg/250px-Lionel_Messi_20180626.jpg",
   },
   {
     id: "ronaldo",
@@ -51,7 +52,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Buteur",
     position: "A",
     form: 87,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis_FC_at_Azadi_Stadium_19_September_2023.jpg/250px-Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis_FC_at_Azadi_Stadium_19_September_2023.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis_FC_at_Azadi_Stadium_19_September_2023.jpg/250px-Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis_FC_at_Azadi_Stadium_19_September_2023.jpg",
   },
   {
     id: "lewandowski",
@@ -61,7 +63,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant de pointe",
     position: "A",
     form: 89,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Robert_Lewandowski_2024.jpg/250px-Robert_Lewandowski_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Robert_Lewandowski_2024.jpg/250px-Robert_Lewandowski_2024.jpg",
   },
   {
     id: "pedri",
@@ -71,7 +74,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Organisateur",
     position: "M",
     form: 86,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Pedri_2024.jpg/250px-Pedri_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Pedri_2024.jpg/250px-Pedri_2024.jpg",
   },
   {
     id: "musiala",
@@ -81,7 +85,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Offensif",
     position: "M",
     form: 92,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Jamal_Musiala_2024.jpg/250px-Jamal_Musiala_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Jamal_Musiala_2024.jpg/250px-Jamal_Musiala_2024.jpg",
   },
   {
     id: "wirtz",
@@ -91,7 +96,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Créatif",
     position: "M",
     form: 93,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Florian_Wirtz_2024.jpg/250px-Florian_Wirtz_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Florian_Wirtz_2024.jpg/250px-Florian_Wirtz_2024.jpg",
   },
   {
     id: "son",
@@ -101,7 +107,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 85,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Son_Heung-min_2022.jpg/250px-Son_Heung-min_2022.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Son_Heung-min_2022.jpg/250px-Son_Heung-min_2022.jpg",
   },
   {
     id: "odegaard",
@@ -111,7 +118,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Créatif",
     position: "M",
     form: 90,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Martin_%C3%98degaard_2022.jpg/250px-Martin_%C3%98degaard_2022.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Martin_%C3%98degaard_2022.jpg/250px-Martin_%C3%98degaard_2022.jpg",
   },
   {
     id: "palmer",
@@ -121,7 +129,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Offensif / Ailier",
     position: "M",
     form: 92,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Cole_Palmer_2023_%28cropped%29.jpg/250px-Cole_Palmer_2023_%28cropped%29.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Cole_Palmer_2023_%28cropped%29.jpg/250px-Cole_Palmer_2023_%28cropped%29.jpg",
   },
   {
     id: "foden",
@@ -131,7 +140,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Offensif",
     position: "M",
     form: 88,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Phil_Foden_2023.jpg/250px-Phil_Foden_2023.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Phil_Foden_2023.jpg/250px-Phil_Foden_2023.jpg",
   },
   {
     id: "rodri",
@@ -141,7 +151,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Défensif",
     position: "M",
     form: 95,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Rodrigo_Hern%C3%A5ndez_Cascante_2024.jpg/250px-Rodrigo_Hern%C3%A5ndez_Cascante_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Rodrigo_Hern%C3%A5ndez_Cascante_2024.jpg/250px-Rodrigo_Hern%C3%A5ndez_Cascante_2024.jpg",
   },
   {
     id: "rice",
@@ -151,7 +162,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Récupérateur",
     position: "M",
     form: 89,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Declan_Rice_2024.jpg/250px-Declan_Rice_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Declan_Rice_2024.jpg/250px-Declan_Rice_2024.jpg",
   },
   {
     id: "vandijk",
@@ -161,7 +173,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Défenseur Central",
     position: "D",
     form: 91,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Virgil_van_Dijk_2024.jpg/250px-Virgil_van_Dijk_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Virgil_van_Dijk_2024.jpg/250px-Virgil_van_Dijk_2024.jpg",
   },
   {
     id: "saliba",
@@ -171,7 +184,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Défenseur Central",
     position: "D",
     form: 90,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/William_Saliba_2024.jpg/250px-William_Saliba_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/William_Saliba_2024.jpg/250px-William_Saliba_2024.jpg",
   },
   {
     id: "rudiger",
@@ -181,7 +195,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Défenseur Central",
     position: "D",
     form: 88,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Antonio_R%C3%BCdiger_2024.jpg/250px-Antonio_R%C3%BCdiger_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Antonio_R%C3%BCdiger_2024.jpg/250px-Antonio_R%C3%BCdiger_2024.jpg",
   },
   {
     id: "dembele",
@@ -191,7 +206,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 84,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Ousmane_Demb%C3%A9l%C3%A9_2020.jpg/250px-Ousmane_Demb%C3%A9l%C3%A9_2020.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Ousmane_Demb%C3%A9l%C3%A9_2020.jpg/250px-Ousmane_Demb%C3%A9l%C3%A9_2020.jpg",
   },
   {
     id: "barcola",
@@ -201,7 +217,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 87,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Bradley_Barcola_2024.jpg/250px-Bradley_Barcola_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Bradley_Barcola_2024.jpg/250px-Bradley_Barcola_2024.jpg",
   },
   {
     id: "zaireemery",
@@ -211,7 +228,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Central",
     position: "M",
     form: 85,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Warren_Za%C3%AFre-Emery_2024.jpg/250px-Warren_Za%C3%AFre-Emery_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Warren_Za%C3%AFre-Emery_2024.jpg/250px-Warren_Za%C3%AFre-Emery_2024.jpg",
   },
   {
     id: "maignan",
@@ -221,7 +239,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Gardien de But",
     position: "G",
     form: 86,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mike_Maignan_2024.jpg/250px-Mike_Maignan_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mike_Maignan_2024.jpg/250px-Mike_Maignan_2024.jpg",
   },
   {
     id: "courtois-player",
@@ -231,7 +250,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Gardien de But",
     position: "G",
     form: 89,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Thibaut_Courtois_2018.jpg/250px-Thibaut_Courtois_2018.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Thibaut_Courtois_2018.jpg/250px-Thibaut_Courtois_2018.jpg",
   },
   {
     id: "martinez-lautaro",
@@ -241,7 +261,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Buteur",
     position: "A",
     form: 88,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Lautaro_Mart%C3%ADnez_2024.jpg/250px-Lautaro_Mart%C3%ADnez_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Lautaro_Mart%C3%ADnez_2024.jpg/250px-Lautaro_Mart%C3%ADnez_2024.jpg",
   },
   {
     id: "leao",
@@ -251,7 +272,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 86,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Rafael_Le%C3%A3o_2024.jpg/250px-Rafael_Le%C3%A3o_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Rafael_Le%C3%A3o_2024.jpg/250px-Rafael_Le%C3%A3o_2024.jpg",
   },
   {
     id: "kvaratskhelia",
@@ -261,7 +283,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 85,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Khvicha_Kvaratskhelia_2024.jpg/250px-Khvicha_Kvaratskhelia_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Khvicha_Kvaratskhelia_2024.jpg/250px-Khvicha_Kvaratskhelia_2024.jpg",
   },
   {
     id: "osimhen",
@@ -271,7 +294,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant de pointe",
     position: "A",
     form: 87,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Victor_Osimhen_2024.jpg/250px-Victor_Osimhen_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Victor_Osimhen_2024.jpg/250px-Victor_Osimhen_2024.jpg",
   },
   {
     id: "valverde",
@@ -281,7 +305,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Polyvalent",
     position: "M",
     form: 90,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Federico_Valverde_2024.jpg/250px-Federico_Valverde_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Federico_Valverde_2024.jpg/250px-Federico_Valverde_2024.jpg",
   },
   {
     id: "gavi",
@@ -291,7 +316,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Combactif",
     position: "M",
     form: 82,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Gavi_2024.jpg/250px-Gavi_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Gavi_2024.jpg/250px-Gavi_2024.jpg",
   },
   {
     id: "hakimi",
@@ -301,7 +327,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Défenseur Latéral Droit",
     position: "D",
     form: 88,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Achraf_Hakimi_2024.jpg/250px-Achraf_Hakimi_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Achraf_Hakimi_2024.jpg/250px-Achraf_Hakimi_2024.jpg",
   },
   {
     id: "davies",
@@ -311,7 +338,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Défenseur Latéral Gauche",
     position: "D",
     form: 86,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Alphonso_Davies_2024.jpg/250px-Alphonso_Davies_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Alphonso_Davies_2024.jpg/250px-Alphonso_Davies_2024.jpg",
   },
   {
     id: "hernandez",
@@ -321,7 +349,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Défenseur Latéral Gauche",
     position: "D",
     form: 87,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Theo_Hern%C3%A5ndez_2024.jpg/250px-Theo_Hern%C3%A5ndez_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Theo_Hern%C3%A5ndez_2024.jpg/250px-Theo_Hern%C3%A5ndez_2024.jpg",
   },
   {
     id: "donnarumma",
@@ -331,7 +360,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Gardien de But",
     position: "G",
     form: 85,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Gianluigi_Donnarumma_2024.jpg/250px-Gianluigi_Donnarumma_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Gianluigi_Donnarumma_2024.jpg/250px-Gianluigi_Donnarumma_2024.jpg",
   },
   {
     id: "terstegen",
@@ -341,7 +371,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Gardien de But",
     position: "G",
     form: 83,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Marc-Andr%C3%A9_ter_Stegen_2024.jpg/250px-Marc-Andr%C3%A9_ter_Stegen_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Marc-Andr%C3%A9_ter_Stegen_2024.jpg/250px-Marc-Andr%C3%A9_ter_Stegen_2024.jpg",
   },
   {
     id: "silva-bernardo",
@@ -351,7 +382,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Organisateur",
     position: "M",
     form: 87,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Bernardo_Silva_2024.jpg/250px-Bernardo_Silva_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Bernardo_Silva_2024.jpg/250px-Bernardo_Silva_2024.jpg",
   },
   {
     id: "fernandes",
@@ -361,7 +393,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Offensif",
     position: "M",
     form: 86,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Bruno_Fernandes_2024.jpg/250px-Bruno_Fernandes_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Bruno_Fernandes_2024.jpg/250px-Bruno_Fernandes_2024.jpg",
   },
   {
     id: "rashford",
@@ -371,7 +404,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 81,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Marcus_Rashford_2024.jpg/250px-Marcus_Rashford_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Marcus_Rashford_2024.jpg/250px-Marcus_Rashford_2024.jpg",
   },
   {
     id: "diaz",
@@ -381,7 +415,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Attaquant Ailier",
     position: "A",
     form: 88,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Luis_D%C3%ADaz_2024.jpg/250px-Luis_D%C3%ADaz_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Luis_D%C3%ADaz_2024.jpg/250px-Luis_D%C3%ADaz_2024.jpg",
   },
   {
     id: "macallister",
@@ -391,7 +426,8 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Milieu Organisateur",
     position: "M",
     form: 87,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Alexis_Mac_Allister_2024.jpg/250px-Alexis_Mac_Allister_2024.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Alexis_Mac_Allister_2024.jpg/250px-Alexis_Mac_Allister_2024.jpg",
   },
   {
     id: "arnold",
@@ -401,6 +437,7 @@ export const POPULAR_PLAYERS: SuggestionPlayer[] = [
     positionLong: "Défenseur Latéral Droit",
     position: "D",
     form: 89,
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Trent_Alexander-Arnold_2024.jpg/250px-Trent_Alexander-Arnold_2024.jpg",
-  }
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Trent_Alexander-Arnold_2024.jpg/250px-Trent_Alexander-Arnold_2024.jpg",
+  },
 ];

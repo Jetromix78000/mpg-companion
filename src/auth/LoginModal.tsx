@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, Mail, LogIn, CheckCircle, Loader2 } from "lucide-react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
 
 /**
  * Modale de connexion, ouverte uniquement quand une action l'exige (suivre un joueur).

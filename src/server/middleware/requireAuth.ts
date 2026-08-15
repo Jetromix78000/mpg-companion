@@ -19,7 +19,9 @@ declare global {
 /** Refuse la requête si Supabase n'est pas configuré côté serveur. */
 export function requireSupabase(_req: Request, res: Response, next: NextFunction) {
   if (!isSupabaseConfigured()) {
-    return res.status(503).json({ error: "Authentification indisponible : Supabase non configuré" });
+    return res
+      .status(503)
+      .json({ error: "Authentification indisponible : Supabase non configuré" });
   }
   next();
 }

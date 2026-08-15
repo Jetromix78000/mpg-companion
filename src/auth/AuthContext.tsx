@@ -1,22 +1,7 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { AuthContext, type AuthUser } from "./auth-context";
 
-export interface AuthUser {
-  id: string;
-  email: string | null;
-}
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  /** true tant que la première vérification de session n'a pas répondu */
-  loading: boolean;
-  isLoginOpen: boolean;
-  /** Ouvre la modale de connexion. Appelé par les actions qui exigent un compte. */
-  requestLogin: () => void;
-  closeLogin: () => void;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+export type { AuthUser };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -57,10 +42,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth doit être utilisé dans un <AuthProvider>");
-  return context;
 }

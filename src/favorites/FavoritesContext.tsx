@@ -1,19 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { useAuth } from "../auth/AuthContext";
+import React, { useCallback, useEffect, useState } from "react";
+import { useAuth } from "../auth/useAuth";
+import { FavoritesContext, type FavoritePlayer } from "./favorites-context";
 
-export interface FavoritePlayer {
-  playerId: string;
-  playerName: string;
-}
-
-interface FavoritesContextValue {
-  favoriteIds: Set<string>;
-  isFavorite: (playerId: string) => boolean;
-  /** Ajoute ou retire un favori. Ouvre la modale de connexion si l'utilisateur est anonyme. */
-  toggleFavorite: (player: FavoritePlayer) => Promise<void>;
-}
-
-const FavoritesContext = createContext<FavoritesContextValue | null>(null);
+export type { FavoritePlayer };
 
 // L'aller-retour OAuth recharge la page : l'action en attente doit survivre au rechargement.
 const PENDING_KEY = "mpg:pendingFavorite";
@@ -42,14 +31,14 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
   // Charge les favoris à la connexion, puis rejoue l'action mise en attente avant login.
   useEffect(() => {
-    if (!user) {
-      setFavoriteIds(new Set());
-      return;
-    }
-
     let cancelled = false;
 
     const sync = async () => {
+      if (!user) {
+        setFavoriteIds(new Set());
+        return;
+      }
+
       const res = await fetch("/api/favorites");
       if (!res.ok) return;
       const data = (await res.json()) as { favorites: { player_id: string }[] };
@@ -115,7 +104,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    [user, favoriteIds, requestLogin, addRemote]
+    [user, favoriteIds, requestLogin, addRemote],
   );
 
   const isFavorite = useCallback((playerId: string) => favoriteIds.has(playerId), [favoriteIds]);
@@ -125,10 +114,4 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       {children}
     </FavoritesContext.Provider>
   );
-}
-
-export function useFavorites() {
-  const context = useContext(FavoritesContext);
-  if (!context) throw new Error("useFavorites doit être utilisé dans un <FavoritesProvider>");
-  return context;
 }

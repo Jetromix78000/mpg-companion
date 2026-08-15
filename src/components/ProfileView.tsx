@@ -7,17 +7,13 @@ import {
   Bolt,
   BrainCircuit,
   Users,
-  Calendar,
-  Check,
-  Plus,
   Share2,
-  ChevronRight,
   BarChart3,
   ExternalLink,
   Loader2,
   AlertTriangle,
   XCircle,
-  Clock
+  Clock,
 } from "lucide-react";
 
 interface ProfileViewProps {
@@ -60,10 +56,7 @@ function highlightPlayer(lineup: string, name: string): React.ReactNode {
   );
 }
 
-export default function ProfileView({
-  player,
-  onShowToast,
-}: ProfileViewProps) {
+export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
   const [selectedSeason, setSelectedSeason] = useState("La Liga 25/26");
 
   // Compositions probables Ligue 1, scrappées côté serveur depuis ligue1.com
@@ -73,30 +66,28 @@ export default function ProfileView({
 
   useEffect(() => {
     let active = true;
-    setComposLoading(true);
-    setComposError(false);
-    fetch("/api/compositions")
-      .then((res) => {
+    (async () => {
+      try {
+        const res = await fetch("/api/compositions");
         if (!res.ok) throw new Error("indisponible");
-        return res.json();
-      })
-      .then((data: CompositionsPayload) => {
-        if (active) setCompos(data);
-      })
-      .catch(() => {
+        const data = await res.json() as CompositionsPayload;
+        if (active) {
+          setCompos(data);
+          setComposError(false);
+        }
+      } catch {
         if (active) setComposError(true);
-      })
-      .finally(() => {
+      } finally {
         if (active) setComposLoading(false);
-      });
+      }
+    })();
     return () => {
       active = false;
     };
   }, []);
 
   // Met en avant le match impliquant l'équipe du joueur consulté (si elle est en L1)
-  const normalize = (s: string) =>
-    s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const teamMatches = (a: string, b: string) => {
     const na = normalize(a);
     const nb = normalize(b);
@@ -120,11 +111,15 @@ export default function ProfileView({
     : null;
 
   const lineupForPlayer = matchForPlayer
-    ? matchForPlayer.lineups.find((l) => l.lineup.toLowerCase().includes(player.name.toLowerCase())) || null
+    ? matchForPlayer.lineups.find((l) =>
+        l.lineup.toLowerCase().includes(player.name.toLowerCase()),
+      ) || null
     : null;
 
   const observationForPlayer = matchForPlayer
-    ? matchForPlayer.observations.find((o) => o.toLowerCase().includes(player.name.toLowerCase())) || null
+    ? matchForPlayer.observations.find((o) =>
+        o.toLowerCase().includes(player.name.toLowerCase()),
+      ) || null
     : null;
 
   // Recherche du statut en direct du joueur (blessure/forme/composition) dans les compositions
@@ -421,9 +416,7 @@ export default function ProfileView({
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-4 bg-surface-container-low rounded-xl border border-white/5">
-              <span className="text-xs text-muted-text font-semibold block mb-1">
-                Min. / Match
-              </span>
+              <span className="text-xs text-muted-text font-semibold block mb-1">Min. / Match</span>
               <span className="text-2xl font-black text-white">{player.minPerMatch}</span>
             </div>
             <div className="p-4 bg-surface-container-low rounded-xl border border-white/5">
@@ -433,20 +426,12 @@ export default function ProfileView({
               <span className="text-2xl font-black text-white">{player.starts}</span>
             </div>
             <div className="p-4 bg-surface-container-low rounded-xl border border-white/5">
-              <span className="text-xs text-muted-text font-semibold block mb-1">
-                Buts / 90min
-              </span>
-              <span className="text-2xl font-black text-white font-mono">
-                {player.goalsPer90}
-              </span>
+              <span className="text-xs text-muted-text font-semibold block mb-1">Buts / 90min</span>
+              <span className="text-2xl font-black text-white font-mono">{player.goalsPer90}</span>
             </div>
             <div className="p-4 bg-surface-container-low rounded-xl border border-white/5">
-              <span className="text-xs text-muted-text font-semibold block mb-1">
-                Passes D.
-              </span>
-              <span className="text-2xl font-black text-white">
-                {player.assists || 0}
-              </span>
+              <span className="text-xs text-muted-text font-semibold block mb-1">Passes D.</span>
+              <span className="text-2xl font-black text-white">{player.assists || 0}</span>
             </div>
           </div>
         </div>
@@ -584,8 +569,8 @@ export default function ProfileView({
             startRecommendation.verdict === "conseille"
               ? "border-white/5 border-l-primary-container"
               : startRecommendation.verdict === "incertain"
-              ? "border-white/5 border-l-secondary"
-              : "border-white/5 border-l-stat-decrease"
+                ? "border-white/5 border-l-secondary"
+                : "border-white/5 border-l-stat-decrease"
           }`}
         >
           <div className="flex items-start justify-between gap-3">
@@ -609,29 +594,32 @@ export default function ProfileView({
                 startRecommendation.verdict === "conseille"
                   ? "bg-primary-container/10 text-primary-container border-primary-container/30"
                   : startRecommendation.verdict === "incertain"
-                  ? "bg-secondary/15 text-secondary border-secondary/30"
-                  : "bg-stat-decrease/10 text-stat-decrease border-stat-decrease/30"
+                    ? "bg-secondary/15 text-secondary border-secondary/30"
+                    : "bg-stat-decrease/10 text-stat-decrease border-stat-decrease/30"
               }`}
             >
               {startRecommendation.verdict === "conseille"
                 ? "Titulaire conseillé"
                 : startRecommendation.verdict === "incertain"
-                ? "Sous surveillance"
-                : "À éviter cette semaine"}
+                  ? "Sous surveillance"
+                  : "À éviter cette semaine"}
               <span className="font-mono opacity-70">{startRecommendation.score}/100</span>
             </span>
           </div>
 
           <ul className="space-y-2.5">
             {startRecommendation.reasons.map((reason, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs text-on-surface-variant leading-relaxed">
+              <li
+                key={idx}
+                className="flex items-start gap-2.5 text-xs text-on-surface-variant leading-relaxed"
+              >
                 <span
                   className={`shrink-0 mt-1 w-1.5 h-1.5 rounded-full ${
                     reason.tone === "good"
                       ? "bg-primary-container"
                       : reason.tone === "bad"
-                      ? "bg-stat-decrease"
-                      : "bg-secondary"
+                        ? "bg-stat-decrease"
+                        : "bg-secondary"
                   }`}
                 ></span>
                 <span>{reason.text}</span>
@@ -643,15 +631,18 @@ export default function ProfileView({
             <span className="inline-flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               {compos
-                ? `Données Ligue1.com mises à jour le ${new Date(compos.updatedAt).toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}`
+                ? `Données Ligue1.com mises à jour le ${new Date(compos.updatedAt).toLocaleString(
+                    "fr-FR",
+                    {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  )}`
                 : composLoading
-                ? "Récupération des données Ligue1.com en cours…"
-                : "Ligue1.com indisponible — verdict basé sur nos données internes"}
+                  ? "Récupération des données Ligue1.com en cours…"
+                  : "Ligue1.com indisponible — verdict basé sur nos données internes"}
             </span>
             {compos && (
               <a
@@ -732,8 +723,7 @@ export default function ProfileView({
                   >
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span className="text-sm font-bold text-white">
-                        {match.homeTeam}{" "}
-                        <span className="text-muted-text font-normal">vs</span>{" "}
+                        {match.homeTeam} <span className="text-muted-text font-normal">vs</span>{" "}
                         {match.awayTeam}
                       </span>
                       {match.kickoff && (

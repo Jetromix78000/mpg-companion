@@ -11,7 +11,8 @@ export const MOCK_PLAYERS: Player[] = [
     positionLong: "Buteur",
     team: "Real Madrid",
     teamLogoUrl: "https://upload.wikimedia.org/wikipedia/fr/c/c7/Logo_Real_Madrid.svg",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg/250px-Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg/250px-Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg",
     form: 84,
     note: 7.8,
     goals: 12,
@@ -20,23 +21,38 @@ export const MOCK_PLAYERS: Player[] = [
     minPerMatch: "82'",
     goalsPer90: 0.85,
     probabilityToPlay: 95,
-    iaJustification: "Mbappé est pressenti titulaire pour le match de dimanche. Les tests physiques récents ne montrent aucun signe de fatigue musculaire malgré le calendrier chargé.",
+    iaJustification:
+      "Mbappé est pressenti titulaire pour le match de dimanche. Les tests physiques récents ne montrent aucun signe de fatigue musculaire malgré le calendrier chargé.",
     recentNotes: [6.0, 7.5, 4.5, 7.5, 8.4],
     styleTags: ["Finisseur", "Pivot"],
     lastMatches: [
-      { opponent: "Atlético Madrid", result: "V 2-1", minutes: "90'", goals: 1, note: 8.5, isWin: true },
+      {
+        opponent: "Atlético Madrid",
+        result: "V 2-1",
+        minutes: "90'",
+        goals: 1,
+        note: 8.5,
+        isWin: true,
+      },
       { opponent: "Girona FC", result: "N 1-1", minutes: "78'", goals: 0, note: 6.0, isWin: false },
-      { opponent: "AC Milan (C1)", result: "V 3-0", minutes: "90'", goals: 2, note: 9.0, isWin: true }
+      {
+        opponent: "AC Milan (C1)",
+        result: "V 3-0",
+        minutes: "90'",
+        goals: 2,
+        note: 9.0,
+        isWin: true,
+      },
     ],
     comparison: {
       alternativeName: "Endrick",
       stats: [
         { label: "xG / 90min", playerVal: 0.85, altVal: 0.42, maxVal: 1.0 },
         { label: "Forme (5m)", playerVal: 84, altVal: 62, maxVal: 100 },
-        { label: "Note MPG Moy.", playerVal: 7.8, altVal: 6.1, maxVal: 10.0 }
+        { label: "Note MPG Moy.", playerVal: 7.8, altVal: 6.1, maxVal: 10.0 },
       ],
-      impact: "-15%"
-    }
+      impact: "-15%",
+    },
   },
   {
     id: "vinicius",
@@ -47,7 +63,8 @@ export const MOCK_PLAYERS: Player[] = [
     position: "AG",
     positionLong: "Ailier Gauche",
     team: "Real Madrid",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Vinicius_Jr_2021.jpg/250px-Vinicius_Jr_2021.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Vinicius_Jr_2021.jpg/250px-Vinicius_Jr_2021.jpg",
     form: 89,
     note: 7.8,
     goals: 12,
@@ -56,23 +73,38 @@ export const MOCK_PLAYERS: Player[] = [
     minPerMatch: "88'",
     goalsPer90: 0.72,
     probabilityToPlay: 90,
-    iaJustification: "Vinícius Jr. est en pleine forme et dynamisera le couloir gauche madrilène. Aucun pépin physique signalé.",
+    iaJustification:
+      "Vinícius Jr. est en pleine forme et dynamisera le couloir gauche madrilène. Aucun pépin physique signalé.",
     recentNotes: [8.0, 7.8, 8.5, 6.5, 9.0],
     styleTags: ["Dribbleur", "Créateur"],
     lastMatches: [
-      { opponent: "Atlético Madrid", result: "V 2-1", minutes: "90'", goals: 0, note: 7.8, isWin: true },
+      {
+        opponent: "Atlético Madrid",
+        result: "V 2-1",
+        minutes: "90'",
+        goals: 0,
+        note: 7.8,
+        isWin: true,
+      },
       { opponent: "Girona FC", result: "N 1-1", minutes: "90'", goals: 1, note: 8.0, isWin: false },
-      { opponent: "AC Milan (C1)", result: "V 3-0", minutes: "85'", goals: 1, note: 8.5, isWin: true }
+      {
+        opponent: "AC Milan (C1)",
+        result: "V 3-0",
+        minutes: "85'",
+        goals: 1,
+        note: 8.5,
+        isWin: true,
+      },
     ],
     comparison: {
       alternativeName: "Rodrygo",
       stats: [
         { label: "xG / 90min", playerVal: 0.72, altVal: 0.51, maxVal: 1.0 },
         { label: "Forme (5m)", playerVal: 89, altVal: 74, maxVal: 100 },
-        { label: "Note MPG Moy.", playerVal: 7.8, altVal: 7.2, maxVal: 10.0 }
+        { label: "Note MPG Moy.", playerVal: 7.8, altVal: 7.2, maxVal: 10.0 },
       ],
-      impact: "-8%"
-    }
+      impact: "-8%",
+    },
   },
   {
     id: "saka",
@@ -84,7 +116,8 @@ export const MOCK_PLAYERS: Player[] = [
     positionLong: "Ailier Droit",
     team: "Arsenal FC",
     teamLogoUrl: "https://upload.wikimedia.org/wikipedia/fr/5/53/Arsenal_FC_logo.svg",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Bukayo_Saka_2021.jpg/250px-Bukayo_Saka_2021.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Bukayo_Saka_2021.jpg/250px-Bukayo_Saka_2021.jpg",
     form: 82,
     note: 7.6,
     goals: 9,
@@ -93,23 +126,31 @@ export const MOCK_PLAYERS: Player[] = [
     minPerMatch: "84'",
     goalsPer90: 0.55,
     probabilityToPlay: 12,
-    iaJustification: "Saka est temporairement forfait en raison d'une lésion aux ischio-jambiers. Sa période de convalescence est estimée à 14 jours.",
+    iaJustification:
+      "Saka est temporairement forfait en raison d'une lésion aux ischio-jambiers. Sa période de convalescence est estimée à 14 jours.",
     recentNotes: [7.5, 8.0, 7.0, 5.5, 6.0],
     styleTags: ["Dribbleur", "Créateur", "Passeur"],
     lastMatches: [
       { opponent: "Chelsea", result: "V 1-0", minutes: "90'", goals: 0, note: 7.5, isWin: true },
       { opponent: "Newcastle", result: "D 0-1", minutes: "90'", goals: 0, note: 6.0, isWin: false },
-      { opponent: "Seville (C1)", result: "V 2-0", minutes: "85'", goals: 1, note: 8.5, isWin: true }
+      {
+        opponent: "Seville (C1)",
+        result: "V 2-0",
+        minutes: "85'",
+        goals: 1,
+        note: 8.5,
+        isWin: true,
+      },
     ],
     comparison: {
       alternativeName: "Martinelli",
       stats: [
         { label: "xG / 90min", playerVal: 0.55, altVal: 0.38, maxVal: 1.0 },
         { label: "Forme (5m)", playerVal: 82, altVal: 71, maxVal: 100 },
-        { label: "Note MPG Moy.", playerVal: 7.6, altVal: 6.8, maxVal: 10.0 }
+        { label: "Note MPG Moy.", playerVal: 7.6, altVal: 6.8, maxVal: 10.0 },
       ],
-      impact: "-12% de créativité offensive"
-    }
+      impact: "-12% de créativité offensive",
+    },
   },
   {
     id: "guimaraes",
@@ -121,7 +162,8 @@ export const MOCK_PLAYERS: Player[] = [
     positionLong: "Milieu Central",
     team: "Newcastle Utd",
     teamLogoUrl: "https://upload.wikimedia.org/wikipedia/fr/e/ec/Logo_Newcastle_United_FC.svg",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Bruno_Guimar%C3%A3es_2021.jpg/250px-Bruno_Guimar%C3%A3es_2021.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Bruno_Guimar%C3%A3es_2021.jpg/250px-Bruno_Guimar%C3%A3es_2021.jpg",
     form: 81,
     note: 7.4,
     goals: 3,
@@ -130,23 +172,38 @@ export const MOCK_PLAYERS: Player[] = [
     minPerMatch: "88'",
     goalsPer90: 0.21,
     probabilityToPlay: 0,
-    iaJustification: "Bruno Guimarães est suspendu pour accumulation de cartons jaunes. Sa présence physique au milieu va cruellement manquer.",
+    iaJustification:
+      "Bruno Guimarães est suspendu pour accumulation de cartons jaunes. Sa présence physique au milieu va cruellement manquer.",
     recentNotes: [7.0, 6.5, 7.5, 8.0, 7.0],
     styleTags: ["Box-to-box", "Récupérateur", "Passeur"],
     lastMatches: [
-      { opponent: "Liverpool FC", result: "D 1-2", minutes: "90'", goals: 0, note: 7.0, isWin: false },
+      {
+        opponent: "Liverpool FC",
+        result: "D 1-2",
+        minutes: "90'",
+        goals: 0,
+        note: 7.0,
+        isWin: false,
+      },
       { opponent: "Everton FC", result: "V 2-0", minutes: "90'", goals: 0, note: 7.5, isWin: true },
-      { opponent: "Dortmund (C1)", result: "V 1-0", minutes: "90'", goals: 0, note: 8.0, isWin: true }
+      {
+        opponent: "Dortmund (C1)",
+        result: "V 1-0",
+        minutes: "90'",
+        goals: 0,
+        note: 8.0,
+        isWin: true,
+      },
     ],
     comparison: {
       alternativeName: "Sandro Tonali",
       stats: [
         { label: "xG / 90min", playerVal: 0.21, altVal: 0.18, maxVal: 1.0 },
         { label: "Forme (5m)", playerVal: 81, altVal: 79, maxVal: 100 },
-        { label: "Note MPG Moy.", playerVal: 7.4, altVal: 7.1, maxVal: 10.0 }
+        { label: "Note MPG Moy.", playerVal: 7.4, altVal: 7.1, maxVal: 10.0 },
       ],
-      impact: "-3% d'impact physique"
-    }
+      impact: "-3% d'impact physique",
+    },
   },
   {
     id: "tolisso",
@@ -157,8 +214,10 @@ export const MOCK_PLAYERS: Player[] = [
     position: "MC",
     positionLong: "Milieu Central",
     team: "Olympique Lyonnais",
-    teamLogoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Olympique_Lyonnais_logo.svg/60px-Olympique_Lyonnais_logo.svg.png",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Corentin_Tolisso_2018.jpg/250px-Corentin_Tolisso_2018.jpg",
+    teamLogoUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Olympique_Lyonnais_logo.svg/60px-Olympique_Lyonnais_logo.svg.png",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Corentin_Tolisso_2018.jpg/250px-Corentin_Tolisso_2018.jpg",
     form: 79,
     note: 6.9,
     goals: 2,
@@ -167,23 +226,31 @@ export const MOCK_PLAYERS: Player[] = [
     minPerMatch: "78'",
     goalsPer90: 0.1,
     probabilityToPlay: 90,
-    iaJustification: "Tolisso porte le brassard de capitaine cette saison et reste un titulaire indiscutable au milieu lyonnais lorsqu'il est épargné par les pépins physiques récurrents de sa carrière.",
+    iaJustification:
+      "Tolisso porte le brassard de capitaine cette saison et reste un titulaire indiscutable au milieu lyonnais lorsqu'il est épargné par les pépins physiques récurrents de sa carrière.",
     recentNotes: [6.5, 7.0, 6.0, 7.5, 7.0],
     styleTags: ["Récupérateur", "Passeur", "Leader"],
     lastMatches: [
-      { opponent: "Stade Rennais", result: "V 2-0", minutes: "90'", goals: 0, note: 7.0, isWin: true },
+      {
+        opponent: "Stade Rennais",
+        result: "V 2-0",
+        minutes: "90'",
+        goals: 0,
+        note: 7.0,
+        isWin: true,
+      },
       { opponent: "RC Lens", result: "N 1-1", minutes: "85'", goals: 1, note: 7.5, isWin: false },
-      { opponent: "AJ Auxerre", result: "V 1-0", minutes: "90'", goals: 0, note: 6.5, isWin: true }
+      { opponent: "AJ Auxerre", result: "V 1-0", minutes: "90'", goals: 0, note: 6.5, isWin: true },
     ],
     comparison: {
       alternativeName: "Tanner Tessmann",
       stats: [
         { label: "xG / 90min", playerVal: 0.1, altVal: 0.05, maxVal: 1.0 },
         { label: "Forme (5m)", playerVal: 79, altVal: 68, maxVal: 100 },
-        { label: "Note MPG Moy.", playerVal: 6.9, altVal: 6.3, maxVal: 10.0 }
+        { label: "Note MPG Moy.", playerVal: 6.9, altVal: 6.3, maxVal: 10.0 },
       ],
-      impact: "-10% de solidité au milieu"
-    }
+      impact: "-10% de solidité au milieu",
+    },
   },
 ];
 
@@ -191,13 +258,15 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
   {
     id: "transfer-1",
     playerName: "Nico Paz",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/0/0a/Nico_Paz_2023_%28cropped%29.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/0/0a/Nico_Paz_2023_%28cropped%29.jpg",
     fromTeam: "Real Madrid",
     toTeam: "Côme",
-    description: "Le Real Madrid vient de confirmer le départ de Nico Paz à Côme pour la saison 2026/2027.",
+    description:
+      "Le Real Madrid vient de confirmer le départ de Nico Paz à Côme pour la saison 2026/2027.",
     amount: "Non dévoilé",
     time: "21:19",
-    type: "Official"
+    type: "Official",
   },
   {
     id: "transfer-4",
@@ -205,10 +274,11 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Bouna_Sarr_2021.jpg",
     fromTeam: "FC Metz",
     toTeam: "FC Metz",
-    description: "Bouna Sarr a prolongé son contrat avec les Grenats pour deux saisons supplémentaires jusqu'au 30 juin 2028.",
+    description:
+      "Bouna Sarr a prolongé son contrat avec les Grenats pour deux saisons supplémentaires jusqu'au 30 juin 2028.",
     amount: "Contrat: 2028",
     time: "18:19",
-    type: "Prolongation"
+    type: "Prolongation",
   },
   {
     id: "transfer-5",
@@ -216,85 +286,120 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     avatarUrl: "https://images.unsplash.com/photo-1543326301-8c0a4e16d800?q=80&w=300",
     fromTeam: "RB Leipzig",
     toTeam: "PSG",
-    description: "Yan Diomandé a finalement dit non à Liverpool et a accepté de rejoindre le Paris Saint-Germain.",
+    description:
+      "Yan Diomandé a finalement dit non à Liverpool et a accepté de rejoindre le Paris Saint-Germain.",
     amount: "En cours",
     time: "17:54",
     type: "Rumor",
     confidence: 85,
-    statusLabel: "Dossier très chaud"
+    statusLabel: "Dossier très chaud",
   },
   {
     id: "transfer-8",
     playerName: "Kang-in Lee",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ea/Lee_Kang-in_PSG_Kyoto_2023_crop.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/e/ea/Lee_Kang-in_PSG_Kyoto_2023_crop.jpg",
     fromTeam: "PSG",
     toTeam: "Atlético Madrid",
-    description: "L'Atlético de Madrid s'apprête à lancer officiellement son mercato et a bouclé le dossier de Kang-In Lee.",
+    description:
+      "L'Atlético de Madrid s'apprête à lancer officiellement son mercato et a bouclé le dossier de Kang-In Lee.",
     amount: "En cours",
     time: "11:28",
     type: "Rumor",
     confidence: 90,
-    statusLabel: "Quasi-bouclé"
-  }
+    statusLabel: "Quasi-bouclé",
+  },
 ];
 
 export const MOCK_INJURIES: InjuryItem[] = [
   {
     id: "injury-1",
     playerName: "Bukayo Saka",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Bukayo_Saka_2021.jpg/250px-Bukayo_Saka_2021.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Bukayo_Saka_2021.jpg/250px-Bukayo_Saka_2021.jpg",
     clubName: "Arsenal FC",
     league: "Premier League",
     type: "Élongation ischio-jambiers",
     detail: "Lésion Grade 1",
     estimatedReturn: "14 Jours (24 Nov)",
     status: InjuryStatus.Absent,
-    confidence: 12
+    confidence: 12,
   },
   {
     id: "injury-2",
     playerName: "Kevin De Bruyne",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Kevin_De_Bruyne_2018.jpg/250px-Kevin_De_Bruyne_2018.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Kevin_De_Bruyne_2018.jpg/250px-Kevin_De_Bruyne_2018.jpg",
     clubName: "Manchester City",
     league: "Premier League",
     type: "Coup",
     detail: "Test de fitness requis",
     estimatedReturn: "Prochain Match (12 Nov)",
     status: InjuryStatus.Incertain,
-    confidence: 65
+    confidence: 65,
   },
   {
     id: "injury-3",
     playerName: "Kylian Mbappé",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg/250px-Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg/250px-Kylian_Mbapp%C3%A9_Real_Madrid_unveiling.jpg",
     clubName: "Real Madrid",
     league: "La Liga",
     type: "Entorse cheville",
     detail: "Entraînement léger repris",
     estimatedReturn: "Reprise (15 Nov)",
     status: InjuryStatus.Reprise,
-    confidence: 88
+    confidence: 88,
   },
   {
     id: "injury-4",
     playerName: "Bruno Guimarães",
-    avatarUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Bruno_Guimar%C3%A3es_2021.jpg/250px-Bruno_Guimar%C3%A3es_2021.jpg",
+    avatarUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Bruno_Guimar%C3%A3es_2021.jpg/250px-Bruno_Guimar%C3%A3es_2021.jpg",
     clubName: "Newcastle Utd",
     league: "Premier League",
     type: "Suspension",
     detail: "Accumulation de cartons jaunes",
     estimatedReturn: "1 Match (10 Nov)",
     status: InjuryStatus.Suspendu,
-    confidence: 0
+    confidence: 0,
   },
 ];
 
 export const MOCK_CLUBS_BY_LEAGUE: Record<string, string[]> = {
   "Tous les championnats": ["Tous les clubs"],
-  "Premier League": ["Tous les clubs", "Arsenal FC", "Manchester City", "Newcastle Utd", "Liverpool", "Sunderland"],
-  "Ligue 1": ["Tous les clubs", "PSG", "AS Monaco", "Olympique Lyonnais", "Olympique de Marseille", "FC Metz"],
-  "Ligue 1 McDonald's": ["Tous les clubs", "PSG", "AS Monaco", "Olympique Lyonnais", "Olympique de Marseille", "FC Metz"],
-  "Ligue 1 plus macdonald": ["Tous les clubs", "PSG", "AS Monaco", "Olympique Lyonnais", "Olympique de Marseille", "FC Metz"],
+  "Premier League": [
+    "Tous les clubs",
+    "Arsenal FC",
+    "Manchester City",
+    "Newcastle Utd",
+    "Liverpool",
+    "Sunderland",
+  ],
+  "Ligue 1": [
+    "Tous les clubs",
+    "PSG",
+    "AS Monaco",
+    "Olympique Lyonnais",
+    "Olympique de Marseille",
+    "FC Metz",
+  ],
+  "Ligue 1 McDonald's": [
+    "Tous les clubs",
+    "PSG",
+    "AS Monaco",
+    "Olympique Lyonnais",
+    "Olympique de Marseille",
+    "FC Metz",
+  ],
+  "Ligue 1 plus macdonald": [
+    "Tous les clubs",
+    "PSG",
+    "AS Monaco",
+    "Olympique Lyonnais",
+    "Olympique de Marseille",
+    "FC Metz",
+  ],
   "La Liga": ["Tous les clubs", "Real Madrid", "Atlético Madrid", "Girona FC", "FC Barcelone"],
-  "Serie A": ["Tous les clubs", "Juventus", "Côme"]
+  "Serie A": ["Tous les clubs", "Juventus", "Côme"],
 };

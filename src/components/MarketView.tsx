@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { TransferMovement, Player } from "../types";
 import { MOCK_TRANSFERS, MOCK_PLAYERS } from "../data";
 import { PlayerAvatar } from "./PlayerAvatar";
-import { ArrowRight, RefreshCw, CheckCircle, TrendingUp, AlertTriangle, XCircle, Search } from "lucide-react";
+import { ArrowRight, RefreshCw, CheckCircle, TrendingUp, XCircle } from "lucide-react";
 
 interface MarketViewProps {
   onSelectPlayer: (player: Player) => void;
@@ -12,12 +12,16 @@ interface MarketViewProps {
 
 type FilterType = "Tout" | "Officiel" | "Rumeurs" | "Ligue 1";
 
-export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilter }: MarketViewProps) {
+export default function MarketView({
+  onSelectPlayer,
+  onShowToast,
+  globalTeamFilter,
+}: MarketViewProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("Tout");
 
   // Filter transfers based on type and club connections
   const getFilteredTransfers = () => {
-    let list = MOCK_TRANSFERS;
+    let list: TransferMovement[];
     switch (activeFilter) {
       case "Officiel":
         list = MOCK_TRANSFERS.filter((t) => t.type === "Official" || t.type === "Prolongation");
@@ -25,13 +29,21 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
       case "Rumeurs":
         list = MOCK_TRANSFERS.filter((t) => t.type === "Rumor");
         break;
-      case "Ligue 1":
+      case "Ligue 1": {
         // Transfers involving Ligue 1 teams: PSG, AS Monaco, FC Metz, etc.
-        const ligue1Teams = ["PSG", "AS Monaco", "FC Metz", "Paris Saint-Germain", "Olympique Lyonnais", "Olympique de Marseille"];
+        const ligue1Teams = [
+          "PSG",
+          "AS Monaco",
+          "FC Metz",
+          "Paris Saint-Germain",
+          "Olympique Lyonnais",
+          "Olympique de Marseille",
+        ];
         list = MOCK_TRANSFERS.filter(
-          (t) => ligue1Teams.includes(t.fromTeam) || ligue1Teams.includes(t.toTeam)
+          (t) => ligue1Teams.includes(t.fromTeam) || ligue1Teams.includes(t.toTeam),
         );
         break;
+      }
       case "Tout":
       default:
         list = MOCK_TRANSFERS;
@@ -41,9 +53,10 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
     if (globalTeamFilter) {
       const lowerFilter = globalTeamFilter.toLowerCase();
       list = list.filter(
-        (t) => t.fromTeam.toLowerCase().includes(lowerFilter) || 
-               t.toTeam.toLowerCase().includes(lowerFilter) ||
-               t.playerName.toLowerCase().includes(lowerFilter)
+        (t) =>
+          t.fromTeam.toLowerCase().includes(lowerFilter) ||
+          t.toTeam.toLowerCase().includes(lowerFilter) ||
+          t.playerName.toLowerCase().includes(lowerFilter),
       );
     }
     return list;
@@ -53,15 +66,16 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
 
   // Separate confirmed vs rumors for rendering layout headers
   const confirmedMovements = filteredTransfers.filter(
-    (t) => t.type === "Official" || t.type === "Prolongation"
+    (t) => t.type === "Official" || t.type === "Prolongation",
   );
   const rumorsMovements = filteredTransfers.filter((t) => t.type === "Rumor");
 
   // Navigate to player details if we have match in MOCK_PLAYERS
   const handleCardClick = (transfer: TransferMovement) => {
     const playerMatch = MOCK_PLAYERS.find(
-      (p) => p.name.toLowerCase() === transfer.playerName.toLowerCase() || 
-             p.fullName.toLowerCase().includes(transfer.playerName.toLowerCase())
+      (p) =>
+        p.name.toLowerCase() === transfer.playerName.toLowerCase() ||
+        p.fullName.toLowerCase().includes(transfer.playerName.toLowerCase()),
     );
 
     if (playerMatch) {
@@ -70,7 +84,7 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
     } else {
       onShowToast(
         `Détails du transfert : ${transfer.playerName} (${transfer.fromTeam} ➔ ${transfer.toTeam}) - ${transfer.description}`,
-        "success"
+        "success",
       );
     }
   };
@@ -177,7 +191,9 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
         <section className="space-y-4 pt-4">
           <div className="flex items-center gap-2 pb-2">
             <span className="w-2 h-7 bg-tertiary-container rounded-full"></span>
-            <h2 className="text-xl font-bold font-title-lg text-white">Rumeurs &amp; Négociations</h2>
+            <h2 className="text-xl font-bold font-title-lg text-white">
+              Rumeurs &amp; Négociations
+            </h2>
             <span className="ml-auto text-[11px] text-on-surface-variant font-bold bg-surface-container-high px-3 py-1 rounded-full uppercase tracking-wider">
               En cours
             </span>
@@ -208,8 +224,8 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
                           (t.confidence || 0) > 75
                             ? "bg-primary-container"
                             : (t.confidence || 0) > 40
-                            ? "bg-secondary"
-                            : "bg-error"
+                              ? "bg-secondary"
+                              : "bg-error"
                         }`}
                         style={{ width: `${t.confidence}%` }}
                       ></div>
@@ -232,8 +248,8 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
                       (t.confidence || 0) > 70
                         ? "text-primary-container"
                         : (t.confidence || 0) > 40
-                        ? "text-secondary"
-                        : "text-error"
+                          ? "text-secondary"
+                          : "text-error"
                     }`}
                   >
                     {t.toTeam}
@@ -250,13 +266,14 @@ export default function MarketView({ onSelectPlayer, onShowToast, globalTeamFilt
                       t.statusLabel === "Refusé" || t.statusLabel === "Piste éteinte"
                         ? "text-error"
                         : t.statusLabel === "Quasi-bouclé" || t.statusLabel === "Dossier très chaud"
-                        ? "text-primary-container"
-                        : "text-secondary"
+                          ? "text-primary-container"
+                          : "text-secondary"
                     }`}
                   >
                     {t.statusLabel === "Refusé" || t.statusLabel === "Piste éteinte" ? (
                       <XCircle className="w-3.5 h-3.5" />
-                    ) : t.statusLabel === "Quasi-bouclé" || t.statusLabel === "Dossier très chaud" ? (
+                    ) : t.statusLabel === "Quasi-bouclé" ||
+                      t.statusLabel === "Dossier très chaud" ? (
                       <CheckCircle className="w-3.5 h-3.5" />
                     ) : (
                       <TrendingUp className="w-3.5 h-3.5" />

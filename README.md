@@ -4,13 +4,13 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
 
 ## Stack technique
 
-| Domaine | Techno |
-|---|---|
-| Frontend | React 19 + TypeScript, Vite, Tailwind CSS 4 |
-| Backend | Node.js + Express (mode dev : serveur API dédié port 3000 ; prod : fichiers statiques `dist/`) |
-| IA | Google GenAI SDK (`@google/genai`, modèle Gemini) avec Google Search grounding |
-| Icônes / anim | lucide-react, motion |
-| Build | Vite (client) + esbuild (bundle serveur `server.ts` → `dist/server.cjs`) |
+| Domaine       | Techno                                                                                         |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Frontend      | React 19 + TypeScript, Vite, Tailwind CSS 4                                                    |
+| Backend       | Node.js + Express (mode dev : serveur API dédié port 3000 ; prod : fichiers statiques `dist/`) |
+| IA            | Google GenAI SDK (`@google/genai`, modèle Gemini) avec Google Search grounding                 |
+| Icônes / anim | lucide-react, motion                                                                           |
+| Build         | Vite (client) + esbuild (bundle serveur `server.ts` → `dist/server.cjs`)                       |
 
 ## Démarrage local
 
@@ -22,6 +22,7 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
    ```
 2. Renseigner les variables d'environnement dans `.env` (`GEMINI_API_KEY`, `PROJECT_URL_SUPABASE`, `SUPABASE_KEY`).
 3. Lancer frontend + backend ensemble :
+
    ```bash
    yarn dev
    ```
@@ -30,10 +31,12 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
    - Le frontend proxy automatiquement les appels `/api/*` vers le backend (`vite.config.ts`) — pas de souci CORS, pas de config manuelle.
 
    Pour lancer séparément (2 terminaux, utile pour isoler les logs) :
+
    ```bash
    yarn dev:api   # backend seul, port 3000
    yarn dev:web   # frontend seul, port 3001
    ```
+
 4. Build prod puis lancement :
    ```bash
    yarn build
@@ -43,19 +46,36 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
 
 Sans `GEMINI_API_KEY`, l'app reste utilisable : le backend bascule sur un générateur de joueur fictif (`generateFallbackPlayer`) pour ne jamais casser l'expérience.
 
+## Commandes disponibles
+
+| Commande            | Effet                                                              |
+| ------------------- | ------------------------------------------------------------------ |
+| `yarn dev`          | Lance frontend (Vite) et backend (Express) en parallèle            |
+| `yarn dev:api`      | Lance uniquement le serveur Express (`tsx server.ts`), port 3000   |
+| `yarn dev:web`      | Lance uniquement Vite, port 3001                                   |
+| `yarn build`        | Build client (Vite) + bundle serveur (esbuild → `dist/server.cjs`) |
+| `yarn start`        | Lance le build de production (`node dist/server.cjs`)              |
+| `yarn preview`      | Prévisualise le build Vite en local                                |
+| `yarn clean`        | Supprime `dist/` et `server.js`                                    |
+| `yarn typecheck`    | Vérifie les types TypeScript (`tsc --noEmit`), sans build          |
+| `yarn lint`         | `typecheck` + ESLint (`eslint .`) sur tout le projet               |
+| `yarn lint:fix`     | Applique les corrections ESLint automatiques (`eslint . --fix`)    |
+| `yarn format`       | Reformate tous les fichiers avec Prettier (`prettier --write .`)   |
+| `yarn format:check` | Vérifie le formatage sans modifier les fichiers, utile en CI       |
+
 ## System design
 
 ### 0. Schéma simplifié — flux Frontend / Backend / APIs
 
 ![Schéma simplifié](docs/diagrams/schema-simple.png)
 
-*Diagramme Excalidraw — source éditable : [docs/diagrams/schema-simple.excalidraw](docs/diagrams/schema-simple.excalidraw)*
+_Diagramme Excalidraw — source éditable : [docs/diagrams/schema-simple.excalidraw](docs/diagrams/schema-simple.excalidraw)_
 
 ### 1. Architecture globale
 
 ![Architecture globale](docs/diagrams/architecture-globale.png)
 
-*Diagramme Excalidraw — source éditable : [docs/diagrams/architecture-globale.excalidraw](docs/diagrams/architecture-globale.excalidraw)*
+_Diagramme Excalidraw — source éditable : [docs/diagrams/architecture-globale.excalidraw](docs/diagrams/architecture-globale.excalidraw)_
 
 ### 2. Composants frontend et données statiques
 
@@ -83,7 +103,7 @@ flowchart TB
 
 ![Diagramme de flux — recherche joueur](docs/diagrams/flux-recherche.png)
 
-*Diagramme Excalidraw — source éditable : [docs/diagrams/flux-recherche.excalidraw](docs/diagrams/flux-recherche.excalidraw)*
+_Diagramme Excalidraw — source éditable : [docs/diagrams/flux-recherche.excalidraw](docs/diagrams/flux-recherche.excalidraw)_
 
 <details>
 <summary>Version séquence (Mermaid)</summary>
