@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { FavoritesContext, type FavoritePlayer } from "./favorites-context";
 
@@ -18,7 +18,13 @@ function readPending(): FavoritePlayer | null {
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const { user, requestLogin } = useAuth();
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  // La liste porte aussi le nom du joueur : la sidebar doit pouvoir l'afficher sans
+  // dépendre du catalogue local, qui ne contient pas les joueurs scoutés par IA.
+  const [favorites, setFavorites] = useState<FavoritePlayer[]>([]);
+  const favoriteIds = useMemo(
+    () => new Set(favorites.map((favorite) => favorite.playerId)),
+    [favorites],
+  );
 
   const addRemote = useCallback(async (player: FavoritePlayer) => {
     const res = await fetch("/api/favorites", {
@@ -35,29 +41,34 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
     const sync = async () => {
       if (!user) {
-        setFavoriteIds(new Set());
+        setFavorites([]);
         return;
       }
 
       const res = await fetch("/api/favorites");
       if (!res.ok) return;
-      const data = (await res.json()) as { favorites: { player_id: string }[] };
+      const data = (await res.json()) as {
+        favorites: { player_id: string; player_name: string }[];
+      };
       if (cancelled) return;
 
-      const ids = new Set(data.favorites.map((row) => row.player_id));
+      const list: FavoritePlayer[] = data.favorites.map((row) => ({
+        playerId: row.player_id,
+        playerName: row.player_name,
+      }));
       const pending = readPending();
 
-      if (pending && !ids.has(pending.playerId)) {
+      if (pending && !list.some((favorite) => favorite.playerId === pending.playerId)) {
         try {
           await addRemote(pending);
-          ids.add(pending.playerId);
+          list.unshift(pending);
         } catch {
           // Le favori sera simplement absent : l'utilisateur peut recliquer l'étoile.
         }
       }
       sessionStorage.removeItem(PENDING_KEY);
 
-      if (!cancelled) setFavoriteIds(ids);
+      if (!cancelled) setFavorites(list);
     };
 
     sync().catch(() => undefined);
@@ -78,12 +89,11 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       const wasFavorite = favoriteIds.has(player.playerId);
 
       // Mise à jour optimiste, annulée si le serveur refuse.
-      setFavoriteIds((current) => {
-        const next = new Set(current);
-        if (wasFavorite) next.delete(player.playerId);
-        else next.add(player.playerId);
-        return next;
-      });
+      setFavorites((current) =>
+        wasFavorite
+          ? current.filter((favorite) => favorite.playerId !== player.playerId)
+          : [player, ...current],
+      );
 
       try {
         if (wasFavorite) {
@@ -95,12 +105,11 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           await addRemote(player);
         }
       } catch (error) {
-        setFavoriteIds((current) => {
-          const next = new Set(current);
-          if (wasFavorite) next.add(player.playerId);
-          else next.delete(player.playerId);
-          return next;
-        });
+        setFavorites((current) =>
+          wasFavorite
+            ? [player, ...current]
+            : current.filter((favorite) => favorite.playerId !== player.playerId),
+        );
         throw error;
       }
     },
@@ -110,7 +119,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const isFavorite = useCallback((playerId: string) => favoriteIds.has(playerId), [favoriteIds]);
 
   return (
-    <FavoritesContext.Provider value={{ favoriteIds, isFavorite, toggleFavorite }}>
+    <FavoritesContext.Provider value={{ favorites, favoriteIds, isFavorite, toggleFavorite }}>
       {children}
     </FavoritesContext.Provider>
   );

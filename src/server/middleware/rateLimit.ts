@@ -9,7 +9,7 @@ const MAX_TRACKED_KEYS = 5000;
 
 /**
  * Limiteur en mémoire pour les routes d'auth : il complète le rate limiting de
- * Supabase et coupe court aux boucles d'envoi de magic links depuis une même IP.
+ * Supabase et coupe court au bourrinage de mots de passe depuis une même IP.
  * Portée d'un seul processus : à remplacer par un store partagé le jour où l'app
  * tourne sur plusieurs instances.
  */

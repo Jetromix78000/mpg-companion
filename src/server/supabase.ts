@@ -38,7 +38,7 @@ export function createSupabaseServerClient(req: Request, res: Response) {
 }
 
 /**
- * Origine publique de l'app, utilisée pour les URLs de redirection OAuth et magic link.
+ * Origine publique de l'app, utilisée pour les URLs de redirection OAuth.
  * APP_URL prime si elle est renseignée ; sinon on la déduit de la requête courante.
  */
 export function getAppOrigin(req: Request): string {

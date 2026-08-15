@@ -7,8 +7,11 @@ import DashboardView from "./components/DashboardView";
 import MarketView from "./components/MarketView";
 import ProfileView from "./components/ProfileView";
 import InjuriesView from "./components/InjuriesView";
+import FavoritesView from "./components/FavoritesView";
 import { PlayerAvatar } from "./components/PlayerAvatar";
 import { useAuth } from "./auth/useAuth";
+import { useFavorites } from "./favorites/useFavorites";
+import type { FavoritePlayer } from "./favorites/favorites-context";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -25,6 +28,7 @@ import {
   Menu,
   LogIn,
   LogOut,
+  Star,
 } from "lucide-react";
 
 // Messages associés aux redirections d'auth (?auth_error=...) renvoyées par le serveur.
@@ -33,15 +37,15 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   oauth_refused: "Connexion Google annulée",
   missing_code: "Retour de connexion incomplet",
   exchange_failed: "Session non créée, réessayez",
-  missing_token: "Lien de connexion invalide",
-  link_expired: "Lien de connexion expiré, demandez-en un nouveau",
+  link_expired: "Lien de réinitialisation expiré, demandez-en un nouveau",
 };
 
 export default function App() {
-  const { user, requestLogin, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "market" | "stats" | "injuries">(
-    "dashboard",
-  );
+  const { user, logout, requestLogin, startPasswordRecovery } = useAuth();
+  const { favorites } = useFavorites();
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "market" | "stats" | "injuries" | "favorites"
+  >("dashboard");
   const [selectedPlayer, setSelectedPlayer] = useState<Player>(MOCK_PLAYERS[0]); // Default to Mbappé
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -98,20 +102,24 @@ export default function App() {
     }
   }, [toast.visible]);
 
-  // Retour de connexion : le serveur redirige vers /?auth=success ou /?auth_error=...
+  // Retour de connexion : le serveur redirige vers /?auth=success, /?auth=recovery ou /?auth_error=...
   // On informe puis on nettoie l'URL pour ne pas rejouer le message au rechargement.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const authError = params.get("auth_error");
-    const authSuccess = params.get("auth") === "success";
-    if (!authError && !authSuccess) return;
+    const authStatus = params.get("auth");
+    if (!authError && !authStatus) return;
 
-    showToast(
-      authError ? (AUTH_ERROR_MESSAGES[authError] ?? "Connexion impossible") : "Connexion réussie",
-      authError ? "warning" : "success",
-    );
+    if (authStatus === "recovery") {
+      startPasswordRecovery();
+    } else {
+      showToast(
+        authError ? (AUTH_ERROR_MESSAGES[authError] ?? "Connexion impossible") : "Connexion réussie",
+        authError ? "warning" : "success",
+      );
+    }
     window.history.replaceState({}, "", window.location.pathname);
-  }, []);
+  }, [startPasswordRecovery]);
 
   // Close search suggestions on click outside
   useEffect(() => {
@@ -156,6 +164,24 @@ export default function App() {
       setShowSearchDropdown(false);
       setSearchQuery("");
       handleGlobalSearch(player.fullName);
+    }
+  }
+
+  // Les favoris sont la seule rubrique qui exige un compte : sans session on ouvre la
+  // modale plutôt que d'afficher un onglet vide.
+  function openFavoritesTab() {
+    if (user) setActiveTab("favorites");
+    else requestLogin();
+  }
+
+  // Un favori ne stocke que l'id et le nom : les joueurs scoutés par IA ne sont pas
+  // dans le catalogue local, on repasse alors par la recherche pour reconstruire la fiche.
+  function openFavorite(favorite: FavoritePlayer) {
+    const known = MOCK_PLAYERS.find((p) => p.id === favorite.playerId);
+    if (known) {
+      handleSelectPlayer(known);
+    } else {
+      handleGlobalSearch(favorite.playerName);
     }
   }
 
@@ -423,7 +449,7 @@ export default function App() {
             </div>
           ) : (
             <button
-              className="hidden sm:flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+              className="hidden sm:flex items-center gap-1.5 py-2 px-4 rounded-full bg-gradient-to-r from-secondary to-primary-container text-pitch-dark text-[11px] font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20"
               onClick={requestLogin}
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -477,6 +503,7 @@ export default function App() {
                 { id: "market", label: "Marché", Icon: TrendingUp },
                 { id: "stats", label: "Stats Joueurs", Icon: Award },
                 { id: "injuries", label: "Blessures", Icon: Activity },
+                { id: "favorites", label: "Favoris", Icon: Star },
               ].map(({ id, label, Icon }) => (
                 <button
                   key={id}
@@ -486,7 +513,8 @@ export default function App() {
                       : "text-on-surface-variant hover:bg-white/5 hover:text-white"
                   }`}
                   onClick={() => {
-                    setActiveTab(id as typeof activeTab);
+                    if (id === "favorites") openFavoritesTab();
+                    else setActiveTab(id as typeof activeTab);
                     setShowMobileMenu(false);
                   }}
                 >
@@ -579,6 +607,23 @@ export default function App() {
           </button>
 
           <button
+            className={`w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 transition-all font-bold text-xs uppercase tracking-wider ${
+              activeTab === "favorites"
+                ? "bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-sm"
+                : "text-on-surface-variant hover:bg-white/5 hover:text-white"
+            }`}
+            onClick={openFavoritesTab}
+          >
+            <Star className="w-4.5 h-4.5 shrink-0" />
+            Favoris
+            {favorites.length > 0 && (
+              <span className="ml-auto text-[10px] font-mono font-bold text-primary-container">
+                {favorites.length}
+              </span>
+            )}
+          </button>
+
+          <button
             className="w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 text-on-surface-variant hover:bg-white/5 hover:text-white font-bold text-xs uppercase tracking-wider transition-all"
             onClick={() => {
               setShowSettingsModal(true);
@@ -645,6 +690,8 @@ export default function App() {
               globalTeamFilter={globalTeamFilter}
             />
           )}
+
+          {activeTab === "favorites" && <FavoritesView onOpenFavorite={openFavorite} />}
         </div>
       </main>
 

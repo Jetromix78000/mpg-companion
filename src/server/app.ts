@@ -14,7 +14,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// Auth Supabase (Google + magic link) et favoris. Le reste du site reste accessible sans compte.
+// Auth Supabase (Google + email/mot de passe) et favoris. Le reste du site reste accessible sans compte.
 app.use("/api/auth", authRouter);
 app.use("/api/favorites", favoritesRouter);
 
