@@ -7,19 +7,39 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
 | Domaine | Techno |
 |---|---|
 | Frontend | React 19 + TypeScript, Vite, Tailwind CSS 4 |
-| Backend | Node.js + Express (mode dev : middleware Vite ; prod : fichiers statiques `dist/`) |
+| Backend | Node.js + Express (mode dev : serveur API dédié port 3000 ; prod : fichiers statiques `dist/`) |
 | IA | Google GenAI SDK (`@google/genai`, modèle Gemini) avec Google Search grounding |
 | Icônes / anim | lucide-react, motion |
 | Build | Vite (client) + esbuild (bundle serveur `server.ts` → `dist/server.cjs`) |
 
 ## Démarrage local
 
-**Prérequis :** Node.js
+**Prérequis :** Node.js, yarn
 
-1. Installer les dépendances : `npm install`
-2. Renseigner `GEMINI_API_KEY` dans `.env`
-3. Lancer en dev : `npm run dev` (tsx exécute `server.ts`, qui monte Vite en middleware)
-4. Build prod : `npm run build` puis `npm start`
+1. Installer les dépendances :
+   ```bash
+   yarn install
+   ```
+2. Renseigner les variables d'environnement dans `.env` (`GEMINI_API_KEY`, `PROJECT_URL_SUPABASE`, `SUPABASE_KEY`).
+3. Lancer frontend + backend ensemble :
+   ```bash
+   yarn dev
+   ```
+   - Frontend (Vite) : [http://localhost:3001](http://localhost:3001)
+   - Backend (Express, API only) : [http://localhost:3000](http://localhost:3000)
+   - Le frontend proxy automatiquement les appels `/api/*` vers le backend (`vite.config.ts`) — pas de souci CORS, pas de config manuelle.
+
+   Pour lancer séparément (2 terminaux, utile pour isoler les logs) :
+   ```bash
+   yarn dev:api   # backend seul, port 3000
+   yarn dev:web   # frontend seul, port 3001
+   ```
+4. Build prod puis lancement :
+   ```bash
+   yarn build
+   yarn start
+   ```
+   En prod, un seul serveur Express sert le build statique `dist/` (plus de split de ports).
 
 Sans `GEMINI_API_KEY`, l'app reste utilisable : le backend bascule sur un générateur de joueur fictif (`generateFallbackPlayer`) pour ne jamais casser l'expérience.
 

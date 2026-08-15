@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import cookieParser from "cookie-parser";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import authRouter from "./src/server/routes/auth";
@@ -379,14 +378,8 @@ app.get("/api/compositions", async (_req, res) => {
 app.use("/api", apiErrorHandler);
 
 async function startServer() {
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
+  // En dev, le frontend tourne sur Vite (port 3001, npm run dev:web) qui proxy /api vers ce serveur.
+  if (process.env.NODE_ENV === "production") {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
