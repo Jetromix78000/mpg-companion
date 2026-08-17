@@ -28,7 +28,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["server.ts", "src/server/**/*.ts"],
+    files: ["backend/**/*.ts"],
     languageOptions: {
       globals: globals.node,
     },

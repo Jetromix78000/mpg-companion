@@ -156,22 +156,34 @@ flowchart LR
 
 ```
 mpg-companion/
-├── server.ts                  # Serveur Express : API IA + scraping compositions
-├── src/
-│   ├── App.tsx                 # État global, navigation, recherche, modales
-│   ├── main.tsx                # Point d'entrée React
-│   ├── types.ts                # Types partagés (Player, InjuryItem, ...)
-│   ├── data.ts                 # Données mockées (joueurs, transferts, blessures)
-│   ├── popularPlayers.ts        # Liste de suggestions pour l'autocomplétion
-│   ├── utils/search.ts          # Matching de joueurs (insensible aux accents)
+├── backend/
+│   ├── server.ts                # Entrée serveur Express (dev + prod)
+│   ├── app.ts                   # Config Express, routes, endpoint IA + compositions
+│   ├── supabase.ts              # Client Supabase (cookies, RLS)
+│   ├── middleware/               # requireAuth, rateLimit, errorHandler
+│   ├── routes/                   # auth.ts, favorites.ts
+│   ├── utils/asyncHandler.ts
+│   ├── api/index.ts              # Entrée serverless Vercel
+│   └── supabase/migrations/      # Migrations SQL
+├── frontend/
+│   ├── App.tsx                   # État global, navigation, recherche, modales
+│   ├── main.tsx                  # Point d'entrée React
+│   ├── types.ts                  # Types partagés (Player, InjuryItem, ...)
+│   ├── data.ts                   # Données mockées (joueurs, transferts, blessures)
+│   ├── popularPlayers.ts         # Liste de suggestions pour l'autocomplétion
+│   ├── utils/search.ts           # Matching de joueurs (insensible aux accents)
+│   ├── auth/                     # AuthContext, LoginModal
+│   ├── favorites/                # FavoritesContext
 │   └── components/
 │       ├── DashboardView.tsx
 │       ├── MarketView.tsx
 │       ├── ProfileView.tsx
 │       ├── InjuriesView.tsx
+│       ├── FavoritesView.tsx
+│       ├── FavoriteButton.tsx
 │       └── PlayerAvatar.tsx
-├── wireframes/                 # PDFs de wireframes et UI kit
-└── dist/                       # Build de production (généré)
+├── wireframes/                  # PDFs de wireframes et UI kit
+└── dist/                        # Build de production (généré)
 ```
 
 ## Notes d'implémentation
