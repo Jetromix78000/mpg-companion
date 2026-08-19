@@ -5,6 +5,9 @@ import dotenv from "dotenv";
 import authRouter from "./routes/auth";
 import favoritesRouter from "./routes/favorites";
 import { isSupabaseConfigured } from "./supabase";
+import footballRouter from "./routes/football";
+import dashboardRouter from "./routes/dashboard";
+import { isSportmonksConfigured } from "./services/sportmonks";
 import { apiErrorHandler } from "./middleware/errorHandler";
 
 dotenv.config();
@@ -17,10 +20,18 @@ app.use(cookieParser());
 // Auth Supabase (Google + email/mot de passe) et favoris. Le reste du site reste accessible sans compte.
 app.use("/api/auth", authRouter);
 app.use("/api/favorites", favoritesRouter);
+app.use("/api/football", footballRouter);
+app.use("/api/dashboard", dashboardRouter);
 
 if (!isSupabaseConfigured()) {
   console.warn(
     "Supabase non configuré (PROJECT_URL_SUPABASE / SUPABASE_KEY) : /api/auth et /api/favorites répondront 503.",
+  );
+}
+
+if (!isSportmonksConfigured()) {
+  console.warn(
+    "SportMonks non configuré (SPORTMONKS_API_TOKEN) : /api/football et /api/dashboard répondront 503.",
   );
 }
 
