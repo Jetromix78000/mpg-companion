@@ -1,17 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Player } from "../types";
-import { MOCK_PLAYERS } from "../data";
-import { POPULAR_PLAYERS, SuggestionPlayer } from "../popularPlayers";
+import type { Player } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
-import {
-  Search,
-  ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
-  Trophy,
-} from "lucide-react";
-import { matchPlayer, normalizeText } from "../utils/search";
+import { ViewError, ViewLoader } from "./ViewState";
+import { useAppDispatch, useAppSelector } from "../store";
+import { loadDashboard } from "../reducers/dashboard";
+import { resultsCleared, searchPlayers } from "../reducers/players";
+import { Search, ArrowUpRight, ChevronLeft, ChevronRight, AlertCircle, Trophy } from "lucide-react";
+import { normalizeText } from "../../shared/search";
 
 interface DashboardViewProps {
   onSelectPlayer: (player: Player) => void;
@@ -19,15 +14,42 @@ interface DashboardViewProps {
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }
 
+/** Délai avant d'interroger le serveur pendant la frappe, en millisecondes. */
+const SEARCH_DEBOUNCE_MS = 250;
+
 export default function DashboardView({
   onSelectPlayer,
   onSearchQuery,
   onShowToast,
 }: DashboardViewProps) {
+  const dispatch = useAppDispatch();
+  const { topPlayers, loading, error } = useAppSelector((state) => state.dashboard);
+  // La complétion s'appuie sur GET /api/players/search, pas sur un filtrage local.
+  const filteredSuggestions = useAppSelector((state) => state.players.results);
+
   const [heroSearch, setHeroSearch] = useState("");
   const [showHeroSuggestions, setShowHeroSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const heroSearchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    dispatch(loadDashboard());
+  }, [dispatch]);
+
+  // Le délai évite un aller-retour par caractère frappé.
+  useEffect(() => {
+    const query = heroSearch.trim();
+    if (!query) {
+      dispatch(resultsCleared());
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      dispatch(searchPlayers(query));
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [dispatch, heroSearch]);
 
   // Reset la suggestion active quand la recherche change (ajustement pendant le render,
   // pas dans un effect, pour éviter un cycle de rendu supplémentaire).
@@ -36,41 +58,6 @@ export default function DashboardView({
     setPrevHeroSearch(heroSearch);
     setActiveSuggestionIndex(0);
   }
-
-  // De-duplicate suggestions to keep searches optimal and clean
-  const ALL_SUGGESTION_SEEDS = useMemo(() => {
-    const seeds: SuggestionPlayer[] = [];
-    const seenIds = new Set<string>();
-
-    MOCK_PLAYERS.forEach((p) => {
-      seenIds.add(p.id);
-      seeds.push({
-        id: p.id,
-        name: p.name,
-        fullName: p.fullName,
-        team: p.team,
-        positionLong: p.positionLong,
-        position: p.position,
-        form: p.form,
-        avatarUrl: p.avatarUrl,
-      });
-    });
-
-    POPULAR_PLAYERS.forEach((p) => {
-      if (!seenIds.has(p.id)) {
-        seenIds.add(p.id);
-        seeds.push(p);
-      }
-    });
-
-    return seeds;
-  }, []);
-
-  // Filter players based on optimized diacritics-insensitive matching helper
-  const filteredSuggestions = useMemo(() => {
-    if (!heroSearch.trim()) return [];
-    return ALL_SUGGESTION_SEEDS.filter((p) => matchPlayer(p, heroSearch));
-  }, [heroSearch, ALL_SUGGESTION_SEEDS]);
 
   // Find candidate for inline completion hint
   const bestMatch = filteredSuggestions[0];
@@ -112,17 +99,10 @@ export default function DashboardView({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSuggestionClick = (player: SuggestionPlayer) => {
+  const handleSuggestionClick = (player: Player) => {
     setHeroSearch("");
     setShowHeroSuggestions(false);
-
-    const isFullPlayer = MOCK_PLAYERS.some((p) => p.id === player.id);
-    if (isFullPlayer) {
-      const fullPlayer = MOCK_PLAYERS.find((p) => p.id === player.id)!;
-      onSelectPlayer(fullPlayer);
-    } else {
-      onSearchQuery(player.fullName);
-    }
+    onSelectPlayer(player);
   };
 
   const handleHeroSearchSubmit = (e: React.FormEvent) => {
@@ -212,7 +192,7 @@ export default function DashboardView({
                   }}
                   onKeyDown={handleKeyDown}
                   onFocus={() => setShowHeroSuggestions(true)}
-                  placeholder="Rechercher un joueur (Mbappé, Vinícius, Haaland...)"
+                  placeholder="Rechercher un joueur (Dembélé, Hakimi, Šulc...)"
                   type="text"
                   autoComplete="off"
                 />
@@ -307,6 +287,9 @@ export default function DashboardView({
       </section>
 
       {/* Grid Layout for Main Widgets */}
+      {loading && <ViewLoader label="Chargement du tableau de bord..." />}
+      {error && <ViewError message={error} onRetry={() => dispatch(loadDashboard())} />}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column - Latest Searches & Hot Players */}
         <section className="lg:col-span-8 space-y-6">
@@ -321,8 +304,8 @@ export default function DashboardView({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Mbappé Card */}
-              {MOCK_PLAYERS.slice(0, 2).map((player) => (
+              {/* Dernières recherches */}
+              {topPlayers.slice(0, 2).map((player) => (
                 <div
                   key={player.id}
                   className="glass-card rounded-2xl p-4 flex gap-4 hover:bg-surface-container-high transition-all cursor-pointer group hover:-translate-y-1 duration-300 border border-white/5 shadow-lg"
@@ -400,7 +383,7 @@ export default function DashboardView({
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {MOCK_PLAYERS.slice(0, 4).map((player) => (
+              {topPlayers.slice(0, 4).map((player) => (
                 <div
                   key={player.id}
                   className="glass-card rounded-2xl p-4 text-center space-y-3 hover:translate-y-[-4px] transition-all duration-300 cursor-pointer group border border-white/5 hover:border-primary-container/20 shadow-md hover:shadow-primary-container/5"
@@ -456,7 +439,7 @@ export default function DashboardView({
                   Alerte Blessure Majeure
                 </div>
                 <h3 className="font-bold text-white text-lg tracking-tight leading-snug">
-                  Mbappé incertain pour le prochain match
+                  Niakhaté incertain pour le prochain match
                 </h3>
                 <p className="text-on-surface-variant text-xs leading-relaxed font-medium">
                   Les rapports du staff médical suggèrent une légère fatigue musculaire après
@@ -468,7 +451,7 @@ export default function DashboardView({
                     className="flex-1 px-4 py-2.5 bg-stat-decrease/20 text-stat-decrease hover:bg-stat-decrease/30 active:scale-95 text-xs font-bold rounded-xl transition-all border border-stat-decrease/30"
                     onClick={() =>
                       onShowToast(
-                        "Simulation de transfert out: Mbappé placé sur la liste des ventes",
+                        "Simulation de transfert out: Niakhaté placé sur la liste des ventes",
                         "warning",
                       )
                     }
@@ -478,8 +461,8 @@ export default function DashboardView({
                   <button
                     className="flex-1 px-4 py-2.5 bg-surface-container-high text-white hover:bg-surface-variant hover:text-white active:scale-95 text-xs font-bold rounded-xl transition-all border border-white/5"
                     onClick={() => {
-                      const mbappe = MOCK_PLAYERS.find((p) => p.id === "mbappe");
-                      if (mbappe) onSelectPlayer(mbappe);
+                      const [headliner] = topPlayers;
+                      if (headliner) onSelectPlayer(headliner);
                     }}
                   >
                     Comparer remplaçants
@@ -501,13 +484,13 @@ export default function DashboardView({
                 <div
                   className="flex gap-3 items-start group cursor-pointer"
                   onClick={() =>
-                    onShowToast("Analyse détaillée de Kane bientôt disponible", "success")
+                    onShowToast("Analyse détaillée de Lepaul bientôt disponible", "success")
                   }
                 >
                   <div className="w-2 h-2 mt-2 rounded-full bg-primary-container shadow-[0_0_8px_#00FF87] shrink-0"></div>
                   <div className="space-y-0.5">
                     <p className="text-xs text-white group-hover:text-primary-container transition-colors">
-                      La valeur de Harry Kane devrait augmenter de 15%
+                      La valeur d'Esteban Lepaul devrait augmenter de 15%
                     </p>
                     <p className="text-[10px] text-muted-text font-semibold uppercase">
                       il y a 2 heures • Transfert rumeur

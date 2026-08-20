@@ -1,79 +1,43 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Player } from "./types";
-import { MOCK_PLAYERS } from "./data";
-import { POPULAR_PLAYERS, SuggestionPlayer } from "./popularPlayers";
-import { matchPlayer } from "./utils/search";
+import React, { useEffect, useRef, useState } from "react";
+import type { Player } from "../shared/types";
 import DashboardView from "./components/DashboardView";
 import MarketView from "./components/MarketView";
 import ProfileView from "./components/ProfileView";
 import InjuriesView from "./components/InjuriesView";
-import FavoritesView from "./components/FavoritesView";
 import { PlayerAvatar } from "./components/PlayerAvatar";
 import { useAuth } from "./auth/useAuth";
-import { useFavorites } from "./favorites/useFavorites";
-import type { FavoritePlayer } from "./favorites/favorites-context";
+import { errorMessage } from "./api";
+import { useAppDispatch, useAppSelector } from "./store";
+import { playerSelected, resultsCleared, searchPlayers } from "./reducers/players";
 import {
   LayoutDashboard,
   TrendingUp,
   Award,
   Activity,
-  Settings,
   Bell,
   Search,
   X,
   CheckCircle,
   AlertCircle,
-  Github,
-  MessageSquare,
   Menu,
   LogIn,
   LogOut,
-  Star,
 } from "lucide-react";
 
-// Messages associés aux redirections d'auth (?auth_error=...) renvoyées par le serveur.
-const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  oauth_init: "Connexion Google indisponible pour le moment",
-  oauth_refused: "Connexion Google annulée",
-  missing_code: "Retour de connexion incomplet",
-  exchange_failed: "Session non créée, réessayez",
-  link_expired: "Lien de réinitialisation expiré, demandez-en un nouveau",
-};
+type Tab = "dashboard" | "market" | "stats" | "injuries";
+
+/** Délai avant d'interroger le serveur pendant la frappe, en millisecondes. */
+const SEARCH_DEBOUNCE_MS = 250;
 
 export default function App() {
-  const { user, logout, requestLogin, startPasswordRecovery } = useAuth();
-  const { favorites } = useFavorites();
-  const [activeTab, setActiveTab] = useState<
-    "dashboard" | "market" | "stats" | "injuries" | "favorites"
-  >("dashboard");
-  const [selectedPlayer, setSelectedPlayer] = useState<Player>(MOCK_PLAYERS[0]); // Default to Mbappé
+  const dispatch = useAppDispatch();
+  const { user, logout, requestLogin } = useAuth();
+  const { selected: selectedPlayer, results } = useAppSelector((state) => state.players);
+
+  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-
-  // Feedback fields
-  const [feedbackName, setFeedbackName] = useState("");
-  const [feedbackCategory, setFeedbackCategory] = useState("Suggestion");
-  const [feedbackMessage, setFeedbackMessage] = useState("");
-
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    showToast(
-      `Merci ${feedbackName || "Manager"} ! Votre feedback a été partagé avec la communauté collaborative.`,
-      "success",
-    );
-    setFeedbackMessage("");
-    setShowFeedbackModal(false);
-  };
-
-  // Manager settings state
-  const [managerName, setManagerName] = useState("");
-  const [favoriteLeague, setFavoriteLeague] = useState("Ligue 1");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [globalTeamFilter, setGlobalTeamFilter] = useState<string | null>(null);
 
   // Alert/Toast notifications
   const [toast, setToast] = useState<{
@@ -102,25 +66,6 @@ export default function App() {
     }
   }, [toast.visible]);
 
-  // Retour de connexion : le serveur redirige vers /?auth=success, /?auth=recovery ou /?auth_error=...
-  // On informe puis on nettoie l'URL pour ne pas rejouer le message au rechargement.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const authError = params.get("auth_error");
-    const authStatus = params.get("auth");
-    if (!authError && !authStatus) return;
-
-    if (authStatus === "recovery") {
-      startPasswordRecovery();
-    } else {
-      showToast(
-        authError ? (AUTH_ERROR_MESSAGES[authError] ?? "Connexion impossible") : "Connexion réussie",
-        authError ? "warning" : "success",
-      );
-    }
-    window.history.replaceState({}, "", window.location.pathname);
-  }, [startPasswordRecovery]);
-
   // Close search suggestions on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -135,184 +80,72 @@ export default function App() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const mockIds = new Set(MOCK_PLAYERS.map((p) => p.id));
-  const ALL_SUGGESTION_SEEDS: SuggestionPlayer[] = [
-    ...MOCK_PLAYERS.map((p) => ({
-      id: p.id,
-      name: p.name,
-      fullName: p.fullName,
-      team: p.team,
-      positionLong: p.positionLong,
-      position: p.position,
-      form: p.form,
-      avatarUrl: p.avatarUrl,
-    })),
-    ...POPULAR_PLAYERS.filter((p) => !mockIds.has(p.id)),
-  ];
-
-  function handleSelectPlayer(player: Player | SuggestionPlayer) {
-    const isFullPlayer = "starts" in player || MOCK_PLAYERS.some((p) => p.id === player.id);
-
-    if (isFullPlayer) {
-      const fullPlayer =
-        "starts" in player ? (player as Player) : MOCK_PLAYERS.find((p) => p.id === player.id)!;
-      setSelectedPlayer(fullPlayer);
-      setActiveTab("stats");
-      setShowSearchDropdown(false);
-      setSearchQuery("");
-    } else {
-      setShowSearchDropdown(false);
-      setSearchQuery("");
-      handleGlobalSearch(player.fullName);
+  // L'autocomplétion interroge GET /api/players/search. Le délai évite un
+  // aller-retour par caractère frappé.
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      dispatch(resultsCleared());
+      return;
     }
+
+    const timer = setTimeout(() => {
+      dispatch(searchPlayers(query));
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [dispatch, searchQuery]);
+
+  /** Ouvre une fiche déjà complète, sans aller-retour serveur. */
+  function handleSelectPlayer(player: Player) {
+    dispatch(playerSelected(player));
+    setActiveTab("stats");
+    setShowSearchDropdown(false);
+    setSearchQuery("");
   }
 
-  // Les favoris sont la seule rubrique qui exige un compte : sans session on ouvre la
-  // modale plutôt que d'afficher un onglet vide.
-  function openFavoritesTab() {
-    if (user) setActiveTab("favorites");
-    else requestLogin();
-  }
-
-  // Un favori ne stocke que l'id et le nom : les joueurs scoutés par IA ne sont pas
-  // dans le catalogue local, on repasse alors par la recherche pour reconstruire la fiche.
-  function openFavorite(favorite: FavoritePlayer) {
-    const known = MOCK_PLAYERS.find((p) => p.id === favorite.playerId);
-    if (known) {
-      handleSelectPlayer(known);
-    } else {
-      handleGlobalSearch(favorite.playerName);
-    }
-  }
-
+  /**
+   * Recherche par nom de joueur ou d'équipe, puis ouverture de la première fiche.
+   * Le Marché et le Centre des blessures s'en servent pour ouvrir un joueur dont
+   * ils ne connaissent que le nom.
+   */
   async function handleGlobalSearch(query: string) {
-    if (!query || !query.trim()) return;
     const cleanQuery = query.trim();
+    if (!cleanQuery) return;
 
-    // 1. First, check if there is an exact/partial match for a player name in our static mock data
-    const localMatch = MOCK_PLAYERS.find((p) => matchPlayer(p, cleanQuery));
-
-    if (localMatch) {
-      handleSelectPlayer(localMatch);
-      showToast(`Scout instantané : ${localMatch.fullName}`, "success");
-      return;
-    }
-
-    // 2. Second, check if the query matches a team
-    const lowerQuery = cleanQuery.toLowerCase();
-    const teamTerms = [
-      "lyon",
-      "paris",
-      "marseille",
-      "psg",
-      "ol",
-      "om",
-      "madrid",
-      "arsenal",
-      "man city",
-      "city",
-      "liverpool",
-      "barcelone",
-      "juventus",
-      "newcastle",
-      "bayer",
-      "milan",
-      "girona",
-      "atletico",
-      "olympique",
-    ];
-
-    const isTeam =
-      teamTerms.some((term) => lowerQuery.includes(term)) ||
-      MOCK_PLAYERS.some((p) => p.team.toLowerCase().includes(lowerQuery));
-
-    if (isTeam) {
-      let standardTeamName = cleanQuery;
-      if (lowerQuery.includes("lyon") || lowerQuery === "ol") {
-        standardTeamName = "Olympique Lyonnais";
-      } else if (lowerQuery.includes("marseille") || lowerQuery === "om") {
-        standardTeamName = "Olympique de Marseille";
-      } else if (lowerQuery.includes("paris") || lowerQuery === "psg") {
-        standardTeamName = "PSG";
-      } else if (lowerQuery.includes("madrid") || lowerQuery.includes("real")) {
-        standardTeamName = "Real Madrid";
-      } else if (lowerQuery.includes("arsenal")) {
-        standardTeamName = "Arsenal FC";
-      } else if (lowerQuery.includes("city") || lowerQuery.includes("manchester")) {
-        standardTeamName = "Man City";
-      } else if (lowerQuery.includes("liverpool")) {
-        standardTeamName = "Liverpool";
-      } else if (lowerQuery.includes("barcelone") || lowerQuery.includes("barca")) {
-        standardTeamName = "FC Barcelone";
-      } else if (lowerQuery.includes("juventus") || lowerQuery.includes("juve")) {
-        standardTeamName = "Juventus";
-      } else {
-        // Fallback matching
-        const foundPlayer = MOCK_PLAYERS.find((p) => p.team.toLowerCase().includes(lowerQuery));
-        if (foundPlayer) {
-          standardTeamName = foundPlayer.team;
-        }
-      }
-
-      setGlobalTeamFilter(standardTeamName);
-
-      // Select the first player of this team to show in Stats/Profile View
-      const teamPlayers = MOCK_PLAYERS.filter(
-        (p) => p.team === standardTeamName || p.team.toLowerCase().includes(lowerQuery),
-      );
-      if (teamPlayers.length > 0) {
-        setSelectedPlayer(teamPlayers[0]);
-        setActiveTab("stats");
-        showToast(
-          `Recherche Équipe : ${standardTeamName} activé. Stats affichées pour ${teamPlayers[0].fullName}.`,
-          "success",
-        );
-      } else {
-        showToast(`Recherche Équipe : ${standardTeamName} activé.`, "success");
-      }
-      return;
-    }
-
-    setIsSearching(true);
-    showToast(`Lancement du scout IA européen pour "${cleanQuery}"...`, "success");
+    setShowSearchDropdown(false);
+    setSearchQuery("");
 
     try {
-      const res = await fetch(`/api/search-player?query=${encodeURIComponent(cleanQuery)}`);
-      if (!res.ok) {
-        throw new Error("Erreur de scouting");
-      }
-      const data = await res.json();
-      if (data.player) {
-        setSelectedPlayer(data.player);
-        setActiveTab("stats");
-        showToast(
-          `Joueur scouté avec succès : ${data.player.fullName} (${data.player.team})`,
-          "success",
-        );
+      const players = await dispatch(searchPlayers(cleanQuery)).unwrap();
+
+      if (players.length > 0) {
+        handleSelectPlayer(players[0]);
+        showToast(`Fiche active : ${players[0].fullName}`, "success");
       } else {
-        showToast(`Aucun joueur actif trouvé en Europe pour "${cleanQuery}"`, "warning");
+        showToast(`Aucun joueur trouvé pour "${cleanQuery}"`, "warning");
       }
-    } catch (err) {
-      console.error(err);
-      showToast("Une erreur est survenue lors de la recherche IA.", "warning");
-    } finally {
-      setIsSearching(false);
+    } catch (error: unknown) {
+      showToast(errorMessage(error), "warning");
     }
   }
-
-  // Autocomplete suggestions based on top bar search input (accent-insensitive)
-  const filteredSuggestions = searchQuery
-    ? ALL_SUGGESTION_SEEDS.filter((p) => matchPlayer(p, searchQuery))
-    : [];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (filteredSuggestions.length > 0) {
-      handleSelectPlayer(filteredSuggestions[0]);
+    if (results.length > 0) {
+      handleSelectPlayer(results[0]);
+      showToast(`Fiche active : ${results[0].fullName}`, "success");
     } else if (searchQuery.trim()) {
       handleGlobalSearch(searchQuery);
     }
   };
+
+  const NAV_ITEMS: { id: Tab; label: string; Icon: typeof LayoutDashboard }[] = [
+    { id: "dashboard", label: "Tableau de bord", Icon: LayoutDashboard },
+    { id: "market", label: "Marché", Icon: TrendingUp },
+    { id: "stats", label: "Stats Joueurs", Icon: Award },
+    { id: "injuries", label: "Blessures", Icon: Activity },
+  ];
 
   return (
     <div className="min-h-screen bg-pitch-dark text-on-surface font-sans antialiased overflow-x-hidden">
@@ -367,7 +200,7 @@ export default function App() {
                     setShowSearchDropdown(true);
                   }}
                   onFocus={() => setShowSearchDropdown(true)}
-                  placeholder="Rechercher un joueur (Saka, De Bruyne, Kane...)"
+                  placeholder="Rechercher un joueur (Dembélé, Hakimi, Šulc...)"
                   type="text"
                   autoComplete="off"
                 />
@@ -381,35 +214,33 @@ export default function App() {
                   <p className="text-[10px] font-bold text-muted-text uppercase tracking-widest px-3 py-1.5 border-b border-white/5">
                     Suggestions de Scout
                   </p>
-                  {filteredSuggestions.length > 0 ? (
-                    <>
-                      {filteredSuggestions.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 p-2.5 hover:bg-primary-container/10 cursor-pointer rounded-lg transition-colors group"
-                          onClick={() => handleSelectPlayer(item)}
-                        >
-                          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-surface-container-low">
-                            <PlayerAvatar
-                              src={item.avatarUrl}
-                              name={item.fullName}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white group-hover:text-primary-container transition-colors truncate">
-                              {item.fullName}
-                            </p>
-                            <p className="text-[10px] text-muted-text uppercase font-semibold truncate">
-                              {item.team} • {item.positionLong}
-                            </p>
-                          </div>
-                          <span className="text-[10px] bg-primary-container/10 text-primary-container px-2 py-0.5 rounded font-mono font-bold shrink-0">
-                            {item.form} Forme
-                          </span>
+                  {results.length > 0 ? (
+                    results.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 p-2.5 hover:bg-primary-container/10 cursor-pointer rounded-lg transition-colors group"
+                        onClick={() => handleSelectPlayer(item)}
+                      >
+                        <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-surface-container-low">
+                          <PlayerAvatar
+                            src={item.avatarUrl}
+                            name={item.fullName}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-                      ))}
-                    </>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-white group-hover:text-primary-container transition-colors truncate">
+                            {item.fullName}
+                          </p>
+                          <p className="text-[10px] text-muted-text uppercase font-semibold truncate">
+                            {item.team} • {item.positionLong}
+                          </p>
+                        </div>
+                        <span className="text-[10px] bg-primary-container/10 text-primary-container px-2 py-0.5 rounded font-mono font-bold shrink-0">
+                          {item.form} Forme
+                        </span>
+                      </div>
+                    ))
                   ) : (
                     <div className="p-3 text-center">
                       <p className="text-xs text-muted-text font-medium">
@@ -498,13 +329,7 @@ export default function App() {
             </div>
 
             <nav className="flex-1 space-y-2">
-              {[
-                { id: "dashboard", label: "Tableau de bord", Icon: LayoutDashboard },
-                { id: "market", label: "Marché", Icon: TrendingUp },
-                { id: "stats", label: "Stats Joueurs", Icon: Award },
-                { id: "injuries", label: "Blessures", Icon: Activity },
-                { id: "favorites", label: "Favoris", Icon: Star },
-              ].map(({ id, label, Icon }) => (
+              {NAV_ITEMS.map(({ id, label, Icon }) => (
                 <button
                   key={id}
                   className={`w-full py-3.5 px-4 rounded-xl flex items-center gap-3 font-bold text-sm transition-all ${
@@ -513,8 +338,7 @@ export default function App() {
                       : "text-on-surface-variant hover:bg-white/5 hover:text-white"
                   }`}
                   onClick={() => {
-                    if (id === "favorites") openFavoritesTab();
-                    else setActiveTab(id as typeof activeTab);
+                    setActiveTab(id);
                     setShowMobileMenu(false);
                   }}
                 >
@@ -522,143 +346,34 @@ export default function App() {
                   {label}
                 </button>
               ))}
-
-              <button
-                className="w-full py-3.5 px-4 rounded-xl flex items-center gap-3 font-bold text-sm text-on-surface-variant hover:bg-white/5 hover:text-white transition-all"
-                onClick={() => {
-                  setShowSettingsModal(true);
-                  setShowMobileMenu(false);
-                }}
-              >
-                <Settings className="w-5 h-5 shrink-0" />
-                Paramètres
-              </button>
             </nav>
-
-            <div className="mt-auto pt-6 border-t border-white/5">
-              <button
-                className="w-full py-3 px-4 bg-gradient-to-r from-secondary to-primary-container text-pitch-dark font-black rounded-xl text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
-                onClick={() => {
-                  setShowFeedbackModal(true);
-                  setShowMobileMenu(false);
-                }}
-              >
-                <MessageSquare className="w-4 h-4" />
-                Feedbacks
-              </button>
-            </div>
           </aside>
         </div>
       )}
 
       {/* Main Side Sidebar for Desktop */}
       <aside className="hidden md:flex h-full w-64 fixed left-0 top-0 pt-24 flex-col bg-surface-container-low border-r border-white/5 shadow-2xl z-40">
-        {/* Nav lists - Aérée et espacée avec space-y-3.5 et px-4 */}
         <nav className="flex-1 space-y-3.5 px-4">
-          <button
-            className={`w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 transition-all font-bold text-xs uppercase tracking-wider ${
-              activeTab === "dashboard"
-                ? "bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-sm"
-                : "text-on-surface-variant hover:bg-white/5 hover:text-white"
-            }`}
-            onClick={() => setActiveTab("dashboard")}
-          >
-            <LayoutDashboard className="w-4.5 h-4.5 shrink-0" />
-            Tableau de bord
-          </button>
-
-          <button
-            className={`w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 transition-all font-bold text-xs uppercase tracking-wider ${
-              activeTab === "market"
-                ? "bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-sm"
-                : "text-on-surface-variant hover:bg-white/5 hover:text-white"
-            }`}
-            onClick={() => setActiveTab("market")}
-          >
-            <TrendingUp className="w-4.5 h-4.5 shrink-0" />
-            Marché
-          </button>
-
-          <button
-            className={`w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 transition-all font-bold text-xs uppercase tracking-wider ${
-              activeTab === "stats"
-                ? "bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-sm"
-                : "text-on-surface-variant hover:bg-white/5 hover:text-white"
-            }`}
-            onClick={() => {
-              setActiveTab("stats");
-              showToast(`Fiche active : ${selectedPlayer.fullName}`, "success");
-            }}
-          >
-            <Award className="w-4.5 h-4.5 shrink-0" />
-            Stats Joueurs
-          </button>
-
-          <button
-            className={`w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 transition-all font-bold text-xs uppercase tracking-wider ${
-              activeTab === "injuries"
-                ? "bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-sm"
-                : "text-on-surface-variant hover:bg-white/5 hover:text-white"
-            }`}
-            onClick={() => setActiveTab("injuries")}
-          >
-            <Activity className="w-4.5 h-4.5 shrink-0" />
-            Blessures
-          </button>
-
-          <button
-            className={`w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 transition-all font-bold text-xs uppercase tracking-wider ${
-              activeTab === "favorites"
-                ? "bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-sm"
-                : "text-on-surface-variant hover:bg-white/5 hover:text-white"
-            }`}
-            onClick={openFavoritesTab}
-          >
-            <Star className="w-4.5 h-4.5 shrink-0" />
-            Favoris
-            {favorites.length > 0 && (
-              <span className="ml-auto text-[10px] font-mono font-bold text-primary-container">
-                {favorites.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            className="w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 text-on-surface-variant hover:bg-white/5 hover:text-white font-bold text-xs uppercase tracking-wider transition-all"
-            onClick={() => {
-              setShowSettingsModal(true);
-            }}
-          >
-            <Settings className="w-4.5 h-4.5 shrink-0" />
-            Paramètres
-          </button>
-        </nav>
-
-        {/* GitHub Open Source & Feedbacks Encart - Optimisé et Aéré */}
-        <div className="px-4 pb-8 mt-auto">
-          <div className="bg-surface-container-high/80 p-4.5 rounded-2xl border border-white/10 shadow-xl relative overflow-hidden group transition-all duration-300 hover:border-primary-container/20">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-primary-container/5 rounded-full blur-xl group-hover:bg-primary-container/20 transition-all duration-500"></div>
-            <div className="flex items-center gap-2.5 mb-2.5">
-              <Github className="w-5 h-5 text-primary-container" />
-              <span className="text-[10px] text-primary-container font-extrabold uppercase tracking-widest">
-                PROJET COLLABORATIF
-              </span>
-            </div>
-            <p className="text-[11px] text-on-surface-variant leading-relaxed mb-4 font-semibold">
-              Plateforme de partage collaborative pour les passionnés de football et de MPG.
-            </p>
+          {NAV_ITEMS.map(({ id, label, Icon }) => (
             <button
-              className="w-full py-3 px-4 bg-gradient-to-r from-secondary to-primary-container text-pitch-dark font-black rounded-xl text-xs uppercase tracking-wider active:scale-95 hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/5"
+              key={id}
+              className={`w-full py-3.5 px-4.5 rounded-xl flex items-center gap-3.5 transition-all font-bold text-xs uppercase tracking-wider ${
+                activeTab === id
+                  ? "bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-sm"
+                  : "text-on-surface-variant hover:bg-white/5 hover:text-white"
+              }`}
               onClick={() => {
-                setFeedbackName("");
-                setShowFeedbackModal(true);
+                setActiveTab(id);
+                if (id === "stats" && selectedPlayer) {
+                  showToast(`Fiche active : ${selectedPlayer.fullName}`, "success");
+                }
               }}
             >
-              <MessageSquare className="w-4 h-4" />
-              Feedbacks
+              <Icon className="w-4.5 h-4.5 shrink-0" />
+              {label}
             </button>
-          </div>
-        </div>
+          ))}
+        </nav>
       </aside>
 
       {/* Main Viewport Container */}
@@ -674,217 +389,16 @@ export default function App() {
           )}
 
           {activeTab === "market" && (
-            <MarketView
-              onSelectPlayer={handleSelectPlayer}
-              onShowToast={showToast}
-              globalTeamFilter={globalTeamFilter}
-            />
+            <MarketView onOpenPlayerByName={handleGlobalSearch} onShowToast={showToast} />
           )}
 
           {activeTab === "stats" && <ProfileView player={selectedPlayer} onShowToast={showToast} />}
 
           {activeTab === "injuries" && (
-            <InjuriesView
-              onSelectPlayer={handleSelectPlayer}
-              onShowToast={showToast}
-              globalTeamFilter={globalTeamFilter}
-            />
+            <InjuriesView onOpenPlayerByName={handleGlobalSearch} onShowToast={showToast} />
           )}
-
-          {activeTab === "favorites" && <FavoritesView onOpenFavorite={openFavorite} />}
         </div>
       </main>
-
-      {/* Modal 1: Feedbacks & Contribution */}
-      {showFeedbackModal && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="glass-card w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative border border-white/10">
-            <button
-              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
-              onClick={() => setShowFeedbackModal(false)}
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <form onSubmit={handleFeedbackSubmit} className="p-6 md:p-8 space-y-5">
-              <div className="text-center space-y-2">
-                <span className="inline-flex items-center gap-1.5 text-[11px] bg-primary-container/10 border border-primary-container/20 text-primary-container font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                  <Github className="w-3.5 h-3.5" /> Communauté
-                </span>
-                <h3 className="text-xl font-black text-white font-title tracking-tight mt-1">
-                  Partagez vos Feedbacks !
-                </h3>
-                <p className="text-xs text-on-surface-variant font-medium">
-                  Vos suggestions aident la plateforme collaborative de football & MPG à
-                  s'améliorer.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                {/* Votre Pseudo */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-text uppercase tracking-wider">
-                    Votre Pseudo
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={feedbackName}
-                    onChange={(e) => setFeedbackName(e.target.value)}
-                    placeholder=""
-                    className="w-full h-9 bg-surface-container-high border-none text-xs font-semibold rounded-lg text-white focus:ring-1 focus:ring-primary-container px-3"
-                  />
-                </div>
-
-                {/* Category selection */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-text uppercase tracking-wider">
-                    Sujet de votre feedback
-                  </label>
-                  <select
-                    value={feedbackCategory}
-                    onChange={(e) => setFeedbackCategory(e.target.value)}
-                    className="w-full h-9 bg-surface-container-high border-none text-xs font-semibold rounded-lg text-white focus:ring-1 focus:ring-primary-container px-2 cursor-pointer"
-                  >
-                    <option value="Statistiques">Statistiques ou Note MPG erronée</option>
-                    <option value="Suggestion">Idée de fonctionnalité</option>
-                    <option value="Bug">Bug ou Problème d'affichage</option>
-                    <option value="OpenSource">Contribuer sur le Github</option>
-                  </select>
-                </div>
-
-                {/* Feedback Message */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-text uppercase tracking-wider">
-                    Votre Message
-                  </label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={feedbackMessage}
-                    onChange={(e) => setFeedbackMessage(e.target.value)}
-                    placeholder="Écrivez vos suggestions, bugs rencontrés ou encouragements..."
-                    className="w-full bg-surface-container-high border-none text-xs font-semibold rounded-lg text-white focus:ring-1 focus:ring-primary-container p-3 resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-1">
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-primary-container to-secondary text-pitch-dark font-black rounded-xl text-xs uppercase tracking-wider hover:brightness-105 active:scale-98 transition-all flex items-center justify-center gap-2"
-                >
-                  <MessageSquare className="w-4 h-4" /> Envoyer mon feedbacks
-                </button>
-                <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-text">
-                  <span>Projet hébergé sur</span>
-                  <a
-                    href="https://github.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-container hover:underline font-bold flex items-center gap-0.5"
-                  >
-                    <Github className="w-3 h-3" /> GitHub
-                  </a>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal 2: Settings customization */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="glass-card w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative border border-white/10">
-            <button
-              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
-              onClick={() => setShowSettingsModal(false)}
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="p-6 md:p-8 space-y-6">
-              <h3 className="text-xl font-bold font-title tracking-tight text-white flex items-center gap-2 border-b border-white/5 pb-2">
-                <Settings className="w-5 h-5 text-primary-container" />
-                Ajuster vos Préférences
-              </h3>
-
-              <div className="space-y-4">
-                {/* Manager name */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-muted-text uppercase tracking-wider">
-                    Pseudo
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full h-11 bg-surface-container-high border-none text-xs font-semibold rounded-xl text-white focus:ring-2 focus:ring-primary-container px-4"
-                    value={managerName}
-                    onChange={(e) => setManagerName(e.target.value)}
-                  />
-                </div>
-
-                {/* Championnat favori */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-muted-text uppercase tracking-wider">
-                    Ligue Préférée
-                  </label>
-                  <select
-                    className="w-full h-11 bg-surface-container-high border-none text-xs font-semibold rounded-xl text-white focus:ring-2 focus:ring-primary-container px-3 cursor-pointer"
-                    value={favoriteLeague}
-                    onChange={(e) => setFavoriteLeague(e.target.value)}
-                  >
-                    <option value="Ligue 1">Ligue 1 Uber Eats</option>
-                    <option value="La Liga">La Liga EA Sports</option>
-                    <option value="Premier League">Premier League</option>
-                    <option value="Serie A">Serie A</option>
-                  </select>
-                </div>
-
-                {/* Toggles */}
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                  <div>
-                    <p className="text-xs font-bold text-white">Alertes Push Médicales</p>
-                    <p className="text-[10px] text-muted-text">
-                      Alerter en direct si un titulaire est blessé.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded text-primary-container focus:ring-primary-container bg-surface-container-high border-none"
-                    checked={notificationsEnabled}
-                    onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  className="w-full py-3 bg-primary-container text-on-primary-container font-black rounded-xl text-xs uppercase tracking-wider hover:brightness-105 active:scale-98 transition-all"
-                  onClick={() => {
-                    showToast("Préférences enregistrées avec succès !", "success");
-                    setShowSettingsModal(false);
-                  }}
-                >
-                  Valider les Préférences
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Global AI Scouting Loader */}
-      {isSearching && (
-        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-surface-container-high/90 border border-white/10 p-6 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-2xl">
-            <div className="w-12 h-12 rounded-full border-4 border-primary-container border-t-transparent animate-spin mx-auto"></div>
-            <h3 className="font-bold text-white text-base">Scouting IA en cours...</h3>
-            <p className="text-xs text-on-surface-variant font-semibold">
-              Recherche des statistiques réelles de {searchQuery || "votre joueur"} dans tous les
-              clubs d'Europe...
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

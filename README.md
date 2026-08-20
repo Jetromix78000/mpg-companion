@@ -167,7 +167,7 @@ mpg-companion/
 │   └── supabase/migrations/      # Migrations SQL
 ├── frontend/
 │   ├── App.tsx                   # État global, navigation, recherche, modales
-│   ├── main.tsx                  # Point d'entrée React
+│   ├── index.tsx                 # Point d'entrée React
 │   ├── types.ts                  # Types partagés (Player, InjuryItem, ...)
 │   ├── data.ts                   # Données mockées (joueurs, transferts, blessures)
 │   ├── popularPlayers.ts         # Liste de suggestions pour l'autocomplétion

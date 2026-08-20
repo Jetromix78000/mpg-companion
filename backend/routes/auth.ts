@@ -1,243 +1,180 @@
+import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
-import { createSupabaseServerClient, getAppOrigin } from "../supabase";
-import { requireAuth, requireSupabase } from "../middleware/requireAuth";
-import { rateLimit } from "../middleware/rateLimit";
-import { asyncHandler } from "../utils/asyncHandler";
+import bcrypt from "bcrypt";
+import uid2 from "uid2";
+import type { UserDocument } from "../models/User";
+import { User } from "../models/User";
 
-// Protège du bourrinage de mots de passe et du spam de création de comptes.
-const passwordAuthRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+/**
+ * Tout le parcours de connexion tient dans ce fichier : hachage des mots de
+ * passe, gardes de session et routes signup/signin/me/logout. Rien de tout ça
+ * n'est utilisé ailleurs dans le serveur, un seul fichier suffit.
+ */
 
 const MIN_PASSWORD_LENGTH = 8;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Longueur du token de session, en octets aléatoires.
+const TOKEN_LENGTH = 32;
+
+// 12 tours : quelques centaines de millisecondes par vérification, assez lent pour
+// décourager une attaque hors ligne sur un dump de la base.
+const BCRYPT_ROUNDS = 12;
+
+function hashPassword(plain: string): Promise<string> {
+  return bcrypt.hash(plain, BCRYPT_ROUNDS);
+}
+
+function verifyPassword(plain: string, passwordHash: string): Promise<boolean> {
+  return bcrypt.compare(plain, passwordHash);
+}
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  displayName: string | null;
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: AuthenticatedUser;
+    }
+  }
+}
+
+/**
+ * Résout l'utilisateur porté par l'en-tête `Authorization: Bearer <token>`.
+ * Le token vit sur le document User : le logout le vide, ce qui suffit à le rendre
+ * inutilisable. Renvoie null si l'en-tête manque ou si aucun compte ne correspond.
+ */
+async function resolveUser(req: Request): Promise<AuthenticatedUser | null> {
+  const [scheme, token] = (req.headers.authorization ?? "").split(" ");
+  if (scheme?.toLowerCase() !== "bearer" || !token) return null;
+
+  const user = await User.findOne({ token });
+  if (!user) return null;
+
+  return { id: String(user._id), email: user.email, displayName: user.displayName ?? null };
+}
+
+/** Refuse la requête en 401 si personne n'est authentifié. */
+async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const user = await resolveUser(req);
+
+  if (!user) {
+    return res.status(401).json({ error: "Connexion requise" });
+  }
+
+  req.user = user;
+  next();
+}
+
+/**
+ * Attache l'utilisateur s'il y en a un, laisse passer sinon.
+ * Utilisé par GET /api/auth/session, qui répond 200 avec user:null pour un visiteur anonyme.
+ */
+async function attachUser(req: Request, _res: Response, next: NextFunction) {
+  req.user = (await resolveUser(req)) ?? undefined;
+  next();
+}
 
 const router = Router();
 
-router.use(requireSupabase);
+/** Représentation publique d'un utilisateur. Ne jamais y ajouter passwordHash ni token. */
+function publicUser(user: UserDocument) {
+  return {
+    id: String(user._id),
+    email: user.email,
+    displayName: user.displayName ?? null,
+  };
+}
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/** Lit et normalise les identifiants du corps de la requête. */
+function readCredentials(body: unknown) {
+  const source = (body ?? {}) as Record<string, unknown>;
+  return {
+    email: typeof source.email === "string" ? source.email.trim().toLowerCase() : "",
+    password: typeof source.password === "string" ? source.password : "",
+    displayName: typeof source.displayName === "string" ? source.displayName.trim() : undefined,
+  };
+}
 
-// Toutes les redirections pointent vers la racine de l'app : aucun paramètre externe
-// n'est réutilisé comme cible, ce qui écarte tout open redirect.
-const redirectHome = (res: import("express").Response, params: string) =>
-  res.redirect(`/?${params}`);
+/** Crée le compte et ouvre la session dans la foulée. */
+router.post("/signup", async (req, res) => {
+  const { email, password, displayName } = readCredentials(req.body);
 
-/** Démarre le flow Google : Supabase génère l'URL OAuth, le code verifier PKCE part en cookie. */
-router.get(
-  "/google",
-  asyncHandler(async (req, res) => {
-    const supabase = createSupabaseServerClient(req, res);
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${getAppOrigin(req)}/api/auth/callback` },
+  if (!EMAIL_REGEX.test(email)) {
+    return res.status(400).json({ error: "Adresse email invalide" });
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return res
+      .status(400)
+      .json({ error: `Mot de passe trop court (${MIN_PASSWORD_LENGTH} caractères minimum)` });
+  }
+
+  if (await User.exists({ email })) {
+    return res.status(409).json({ error: "Un compte existe déjà avec cet email" });
+  }
+
+  const token = uid2(TOKEN_LENGTH);
+
+  let user: UserDocument;
+  try {
+    user = await User.create({
+      email,
+      passwordHash: await hashPassword(password),
+      token,
+      displayName,
     });
-
-    if (error || !data?.url) {
-      console.error("Erreur init OAuth Google :", error?.message);
-      return redirectHome(res, "auth_error=oauth_init");
+  } catch (error: unknown) {
+    // Deux inscriptions simultanées sur le même email : l'index unique tranche.
+    if (error instanceof Error && "code" in error && error.code === 11000) {
+      return res.status(409).json({ error: "Un compte existe déjà avec cet email" });
     }
+    throw error;
+  }
 
-    res.redirect(data.url);
-  }),
-);
+  res.status(201).json({ user: publicUser(user), token });
+});
 
-/** Retour de Google : échange le code contre une session, posée en cookies httpOnly. */
-router.get(
-  "/callback",
-  asyncHandler(async (req, res) => {
-    const code = typeof req.query.code === "string" ? req.query.code : null;
+/** Connexion email + mot de passe. Renvoie le token que le client stockera. */
+router.post("/signin", async (req, res) => {
+  const { email, password } = readCredentials(req.body);
 
-    // Google renvoie ?error=access_denied quand l'utilisateur refuse l'autorisation.
-    if (typeof req.query.error === "string") {
-      return redirectHome(res, "auth_error=oauth_refused");
-    }
-    if (!code) {
-      return redirectHome(res, "auth_error=missing_code");
-    }
+  if (!EMAIL_REGEX.test(email) || !password) {
+    return res.status(400).json({ error: "Email ou mot de passe manquant" });
+  }
 
-    const supabase = createSupabaseServerClient(req, res);
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+  // passwordHash est en select: false sur le schéma, il faut le redemander.
+  const user = await User.findOne({ email }).select("+passwordHash");
 
-    if (error) {
-      console.error("Erreur échange code OAuth :", error.message);
-      return redirectHome(res, "auth_error=exchange_failed");
-    }
+  // Message volontairement identique dans les deux cas : une réponse différenciée
+  // permettrait d'énumérer les comptes existants.
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+  }
 
-    redirectHome(res, "auth=success");
-  }),
-);
+  // Un nouveau token à chaque connexion : se reconnecter ailleurs invalide la
+  // session précédente, un seul appareil reste connecté à la fois.
+  user.token = uid2(TOKEN_LENGTH);
+  await user.save();
 
-/** Connexion email + mot de passe. La session part en cookies httpOnly, sans quitter la page. */
-router.post(
-  "/login",
-  passwordAuthRateLimit,
-  asyncHandler(async (req, res) => {
-    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
-    const password = typeof req.body?.password === "string" ? req.body.password : "";
-
-    if (!EMAIL_REGEX.test(email) || !password) {
-      return res.status(400).json({ error: "Email ou mot de passe manquant" });
-    }
-
-    const supabase = createSupabaseServerClient(req, res);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    // Message volontairement générique : ne jamais révéler si l'email existe (énumération de comptes).
-    if (error || !data.user) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
-    }
-
-    res.json({ user: { id: data.user.id, email: data.user.email ?? null } });
-  }),
-);
-
-/** Création de compte. Ouvre la session directement quand "Confirm email" est désactivé côté Supabase. */
-router.post(
-  "/signup",
-  passwordAuthRateLimit,
-  asyncHandler(async (req, res) => {
-    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
-    const password = typeof req.body?.password === "string" ? req.body.password : "";
-
-    if (!EMAIL_REGEX.test(email)) {
-      return res.status(400).json({ error: "Adresse email invalide" });
-    }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return res
-        .status(400)
-        .json({ error: `Mot de passe trop court (${MIN_PASSWORD_LENGTH} caractères minimum)` });
-    }
-
-    const supabase = createSupabaseServerClient(req, res);
-    const { data, error } = await supabase.auth.signUp({ email, password });
-
-    if (error) {
-      console.error("Erreur création de compte :", error.message);
-
-      if (error.code === "user_already_exists") {
-        return res.status(409).json({ error: "Un compte existe déjà avec cet email" });
-      }
-      if (error.code === "weak_password") {
-        return res
-          .status(400)
-          .json({ error: `Mot de passe trop faible (${MIN_PASSWORD_LENGTH} caractères minimum)` });
-      }
-      // Quota du service email, atteignable seulement si "Confirm email" est resté activé.
-      if (error.code === "over_email_send_rate_limit") {
-        return res.status(429).json({ error: "Trop d'emails envoyés, réessayez plus tard" });
-      }
-      return res.status(400).json({ error: "Création impossible, réessayez dans un instant" });
-    }
-
-    // Sans session, c'est que "Confirm email" est activé : le compte attend une validation par email.
-    if (!data.session || !data.user) {
-      return res.json({ user: null, confirmationRequired: true });
-    }
-
-    res.json({ user: { id: data.user.id, email: data.user.email ?? null } });
-  }),
-);
-
-/**
- * Envoie un email de réinitialisation. Répond toujours 200 même si l'adresse est inconnue :
- * une réponse différenciée permettrait d'énumérer les comptes existants.
- */
-router.post(
-  "/reset-password",
-  passwordAuthRateLimit,
-  asyncHandler(async (req, res) => {
-    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
-
-    if (!EMAIL_REGEX.test(email)) {
-      return res.status(400).json({ error: "Adresse email invalide" });
-    }
-
-    const supabase = createSupabaseServerClient(req, res);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${getAppOrigin(req)}/api/auth/recovery`,
-    });
-
-    if (error) {
-      console.error("Erreur envoi email de réinitialisation :", error.message);
-
-      // Quota du service email (Supabase par défaut est très bas sans SMTP custom configuré).
-      if (error.code === "over_email_send_rate_limit") {
-        return res.status(429).json({ error: "Trop d'emails envoyés, réessayez plus tard" });
-      }
-    }
-
-    res.json({ ok: true });
-  }),
-);
-
-/** Cible du lien de réinitialisation : ouvre une session pour permettre le changement de mot de passe. */
-router.get(
-  "/recovery",
-  asyncHandler(async (req, res) => {
-    const code = typeof req.query.code === "string" ? req.query.code : null;
-
-    if (!code) {
-      return redirectHome(res, "auth_error=missing_code");
-    }
-
-    const supabase = createSupabaseServerClient(req, res);
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (error) {
-      console.error("Erreur échange code de réinitialisation :", error.message);
-      return redirectHome(res, "auth_error=link_expired");
-    }
-
-    redirectHome(res, "auth=recovery");
-  }),
-);
-
-/** Définit un nouveau mot de passe pour la session en cours (classique ou issue d'un lien de reset). */
-router.post(
-  "/password",
-  passwordAuthRateLimit,
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const password = typeof req.body?.password === "string" ? req.body.password : "";
-
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return res
-        .status(400)
-        .json({ error: `Mot de passe trop court (${MIN_PASSWORD_LENGTH} caractères minimum)` });
-    }
-
-    const { error } = await req.supabase!.auth.updateUser({ password });
-
-    if (error) {
-      console.error("Erreur changement de mot de passe :", error.message);
-      return res.status(400).json({ error: "Changement impossible, réessayez dans un instant" });
-    }
-
-    res.json({ ok: true });
-  }),
-);
+  res.json({ user: publicUser(user), token: user.token });
+});
 
 /** État de session pour le client. Répond 200 avec user:null quand personne n'est connecté. */
-router.get(
-  "/me",
-  asyncHandler(async (req, res) => {
-    const supabase = createSupabaseServerClient(req, res);
-    const { data, error } = await supabase.auth.getUser();
+router.get("/session", attachUser, (req, res) => {
+  res.json({ user: req.user ?? null });
+});
 
-    if (error || !data.user) {
-      return res.json({ user: null });
-    }
-
-    res.json({ user: { id: data.user.id, email: data.user.email ?? null } });
-  }),
-);
-
-/** Révoque la session côté Supabase ; @supabase/ssr efface les cookies au passage. */
-router.post(
-  "/logout",
-  asyncHandler(async (req, res) => {
-    const supabase = createSupabaseServerClient(req, res);
-    await supabase.auth.signOut();
-    res.json({ ok: true });
-  }),
-);
+/**
+ * Déconnexion : vider le token du compte suffit à le rendre inutilisable.
+ */
+router.post("/logout", requireAuth, async (req, res) => {
+  await User.updateOne({ _id: req.user!.id }, { $unset: { token: "" } });
+  res.json({ ok: true });
+});
 
 export default router;
