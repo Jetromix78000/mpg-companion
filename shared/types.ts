@@ -82,3 +82,4 @@ export interface InjuryItem {
   status: InjuryStatus;
   confidence: number; // 0-100
 }
+

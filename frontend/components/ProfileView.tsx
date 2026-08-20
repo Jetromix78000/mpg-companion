@@ -1,210 +1,71 @@
-import React, { useState, useEffect } from "react";
-import { Player } from "../types";
+import { useState } from "react";
+import type { Player } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
-import { FavoriteButton } from "./FavoriteButton";
 import {
   Shield,
   Bolt,
   BrainCircuit,
-  Users,
-  Share2,
   BarChart3,
-  ExternalLink,
-  Loader2,
   AlertTriangle,
   XCircle,
-  Clock,
+  Search,
 } from "lucide-react";
 
 interface ProfileViewProps {
-  player: Player;
+  /** null tant qu'aucune recherche n'a abouti : la fiche n'a plus de joueur par défaut. */
+  player: Player | null;
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }
 
-interface CompoMatch {
-  homeTeam: string;
-  awayTeam: string;
-  kickoff: string;
-  lineups: { label: string; lineup: string }[];
-  observations: string[];
-}
-
-interface CompositionsPayload {
-  sourceUrl: string;
-  updatedAt: string;
-  matches: CompoMatch[];
-  stale?: boolean;
-}
-
-const LIGUE1_SOURCE_URL =
-  "https://ligue1.com/fr/articles/l1_article_3199-2526-les-compositions-probables-l1";
-
-// Surligne le nom du joueur consulté dans une composition (utile si c'est un joueur de L1)
-function highlightPlayer(lineup: string, name: string): React.ReactNode {
-  const short = name.split(" ").pop() || name;
-  if (short.length < 3) return lineup;
-  const parts = lineup.split(new RegExp(`(${short.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "i"));
-  if (parts.length === 1) return lineup;
-  return parts.map((part, i) =>
-    part.toLowerCase() === short.toLowerCase() ? (
-      <span key={i} className="text-primary-container font-bold">
-        {part}
-      </span>
-    ) : (
-      <React.Fragment key={i}>{part}</React.Fragment>
-    ),
+/**
+ * Aucune fiche n'est chargée par défaut : les données joueur viennent désormais de
+ * l'API, il faut d'abord une recherche ou un clic sur un joueur mis en avant.
+ */
+function EmptyProfile() {
+  return (
+    <div className="glass-card rounded-2xl border border-white/10 p-10 flex flex-col items-center text-center gap-3 animate-fadeIn">
+      <div className="w-12 h-12 rounded-full bg-primary-container/10 border border-primary-container/20 flex items-center justify-center">
+        <Search className="w-5 h-5 text-primary-container" />
+      </div>
+      <p className="text-sm font-black text-white">Aucune fiche ouverte</p>
+      <p className="text-xs text-on-surface-variant font-medium max-w-xs">
+        Recherchez un joueur dans la barre du haut, ou ouvrez-en un depuis le tableau de bord, le
+        marché ou le centre des blessures.
+      </p>
+    </div>
   );
 }
 
 export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
-  const [selectedSeason, setSelectedSeason] = useState("La Liga 25/26");
+  if (!player) return <EmptyProfile />;
+  return <PlayerProfile player={player} onShowToast={onShowToast} />;
+}
 
-  // Compositions probables Ligue 1, scrappées côté serveur depuis ligue1.com
-  const [compos, setCompos] = useState<CompositionsPayload | null>(null);
-  const [composLoading, setComposLoading] = useState(true);
-  const [composError, setComposError] = useState(false);
+function PlayerProfile({
+  player,
+  onShowToast,
+}: {
+  player: Player;
+  onShowToast: (message: string, type?: "success" | "warning") => void;
+}) {
+  const [selectedSeason, setSelectedSeason] = useState("Ligue 1 25/26");
 
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/compositions");
-        if (!res.ok) throw new Error("indisponible");
-        const data = await res.json() as CompositionsPayload;
-        if (active) {
-          setCompos(data);
-          setComposError(false);
-        }
-      } catch {
-        if (active) setComposError(true);
-      } finally {
-        if (active) setComposLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Met en avant le match impliquant l'équipe du joueur consulté (si elle est en L1)
-  const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  const teamMatches = (a: string, b: string) => {
-    const na = normalize(a);
-    const nb = normalize(b);
-    return na.includes(nb) || nb.includes(na);
-  };
-  const orderedMatches = (() => {
-    if (!compos) return [];
-    const idx = compos.matches.findIndex(
-      (m) => teamMatches(m.homeTeam, player.team) || teamMatches(m.awayTeam, player.team),
-    );
-    if (idx <= 0) return compos.matches;
-    const copy = [...compos.matches];
-    const [featured] = copy.splice(idx, 1);
-    return [featured, ...copy];
-  })();
-
-  const matchForPlayer = compos
-    ? compos.matches.find(
-        (m) => teamMatches(m.homeTeam, player.team) || teamMatches(m.awayTeam, player.team),
-      ) || null
-    : null;
-
-  const lineupForPlayer = matchForPlayer
-    ? matchForPlayer.lineups.find((l) =>
-        l.lineup.toLowerCase().includes(player.name.toLowerCase()),
-      ) || null
-    : null;
-
-  const observationForPlayer = matchForPlayer
-    ? matchForPlayer.observations.find((o) =>
-        o.toLowerCase().includes(player.name.toLowerCase()),
-      ) || null
-    : null;
-
-  // Recherche du statut en direct du joueur (blessure/forme/composition) dans les compositions
-  // Ligue 1 scrappées : d'abord dans les "Observations" (source d'infos blessures/forfaits),
-  // sinon dans la composition probable elle-même (confirmation qu'il est titulaire).
-  const liveStatus = (() => {
-    if (!matchForPlayer) return null;
-    if (observationForPlayer) {
-      return { label: "Statut médical en direct — Ligue1.com", text: observationForPlayer };
-    }
-    if (lineupForPlayer) {
-      return {
-        label: "Composition confirmée — Ligue1.com",
-        text: `Annoncé titulaire probable par Ligue1.com pour ${matchForPlayer.homeTeam} vs ${matchForPlayer.awayTeam} (${matchForPlayer.kickoff}).`,
-      };
-    }
-    return null;
-  })();
-
-  // Synthèse "faut-il le titulariser en MPG ?" : combine les données réelles scrappées
-  // (composition/observations Ligue1.com) avec la forme récente et l'impact du remplaçant,
-  // pour produire un verdict transparent (chaque commentaire cite sa source).
+  // Synthèse "faut-il le titulariser en MPG ?" : croise la probabilité de titularisation,
+  // la tendance des notes récentes et l'impact du remplaçant, chaque ligne citant sa source.
   const startRecommendation = (() => {
     type Tone = "good" | "neutral" | "bad";
     const reasons: { tone: Tone; text: string }[] = [];
     let score = player.probabilityToPlay;
 
-    if (matchForPlayer) {
-      const short = player.name;
-      const escaped = short.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const isAlternative = lineupForPlayer
-        ? new RegExp(`\\(ou[^)]*${escaped}`, "i").test(lineupForPlayer.lineup)
-        : false;
-      const isCaptain = lineupForPlayer
-        ? new RegExp(`${escaped}\\s*\\(c\\)`, "i").test(lineupForPlayer.lineup)
-        : false;
-      const isContested = lineupForPlayer
-        ? new RegExp(`${escaped}[^,–-]{0,25}\\(ou`, "i").test(lineupForPlayer.lineup)
-        : false;
-
-      if (observationForPlayer) {
-        reasons.push({
-          tone: "neutral",
-          text: `Ligue1.com mentionne ${player.name} dans ses observations : "${observationForPlayer}" — à vérifier avant le coup d'envoi.`,
-        });
-        score -= 15;
-      }
-
-      if (lineupForPlayer && isAlternative) {
-        reasons.push({
-          tone: "bad",
-          text: `Ligue1.com l'annonce comme option alternative (pas titulaire indiscutable) pour ${matchForPlayer.homeTeam} vs ${matchForPlayer.awayTeam}.`,
-        });
-        score -= 25;
-      } else if (lineupForPlayer && isCaptain) {
-        reasons.push({
-          tone: "good",
-          text: `Annoncé titulaire ET capitaine par Ligue1.com pour ${matchForPlayer.homeTeam} vs ${matchForPlayer.awayTeam} (${matchForPlayer.kickoff}) — rotation peu probable.`,
-        });
-        score += 10;
-      } else if (lineupForPlayer && isContested) {
-        reasons.push({
-          tone: "neutral",
-          text: `Annoncé titulaire par Ligue1.com mais en concurrence directe avec un autre joueur à son poste.`,
-        });
-        score -= 5;
-      } else if (lineupForPlayer) {
-        reasons.push({
-          tone: "good",
-          text: `Annoncé titulaire probable par Ligue1.com pour ${matchForPlayer.homeTeam} vs ${matchForPlayer.awayTeam} (${matchForPlayer.kickoff}).`,
-        });
-        score += 5;
-      } else if (!observationForPlayer) {
-        reasons.push({
-          tone: "neutral",
-          text: `${player.name} n'apparaît pas dans la compo probable ni les observations Ligue1.com de ${matchForPlayer.homeTeam} vs ${matchForPlayer.awayTeam}.`,
-        });
-        score -= 10;
-      }
-    } else {
-      reasons.push({
-        tone: "neutral",
-        text: `${player.team} ne fait pas partie des compositions Ligue 1 analysées cette semaine par Ligue1.com — verdict basé sur nos données internes.`,
-      });
-    }
+    reasons.push({
+      tone:
+        player.probabilityToPlay >= 70
+          ? "good"
+          : player.probabilityToPlay >= 40
+            ? "neutral"
+            : "bad",
+      text: `Probabilité de titularisation estimée à ${player.probabilityToPlay}% : ${player.iaJustification}`,
+    });
 
     const notes = player.recentNotes;
     if (notes.length >= 2) {
@@ -235,10 +96,6 @@ export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
 
     return { score, verdict, reasons };
   })();
-
-  const handleShare = () => {
-    onShowToast(`Lien de partage du profil de ${player.fullName} copié !`, "success");
-  };
 
   return (
     <div className="space-y-6 animate-fadeIn" id="player-profile-panel">
@@ -275,21 +132,6 @@ export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
               <span>{player.country}</span>
             </div>
           </div>
-        </div>
-
-        <div className="flex gap-2.5 w-full md:w-auto">
-          <FavoriteButton
-            playerId={player.id}
-            playerName={player.fullName}
-            onShowToast={onShowToast}
-          />
-          <button
-            className="w-full md:w-auto px-6 py-3 bg-white/5 hover:bg-white/10 text-white font-bold border border-white/10 rounded-xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
-            onClick={handleShare}
-          >
-            <Share2 className="w-4 h-4" />
-            Partager le profil
-          </button>
         </div>
       </div>
 
@@ -373,22 +215,11 @@ export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-1.5 text-primary-container font-bold text-xs">
                 <BrainCircuit className="w-4 h-4" />
-                {liveStatus ? liveStatus.label.toUpperCase() : "JUSTIFICATION IA COMPANION"}
+                JUSTIFICATION IA COMPANION
               </div>
-              {liveStatus && (
-                <a
-                  href={compos!.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-primary-container underline underline-offset-2"
-                >
-                  Source
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
             </div>
             <p className="text-xs text-on-surface-variant leading-relaxed italic font-medium">
-              "{liveStatus ? liveStatus.text : player.iaJustification}"
+              "{player.iaJustification}"
             </p>
           </div>
         </div>
@@ -408,7 +239,7 @@ export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
                 onShowToast(`Simulation de saison changée pour ${player.name}`, "success");
               }}
             >
-              <option>La Liga 25/26</option>
+              <option>Ligue 1 25/26</option>
               <option>Ligue des Champions</option>
               <option>Stats Historiques</option>
             </select>
@@ -563,7 +394,7 @@ export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
           </div>
         </div>
 
-        {/* 4. Faut-il le titulariser en MPG ? — synthèse basée sur les données scrappées Ligue1.com */}
+        {/* 4. Faut-il le titulariser en MPG ? */}
         <div
           className={`glass-card p-5 rounded-2xl border shadow-xl space-y-4 border-l-4 ${
             startRecommendation.verdict === "conseille"
@@ -586,7 +417,7 @@ export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
                 Faut-il le titulariser en MPG ?
               </h3>
               <p className="text-xs text-muted-text font-medium">
-                Synthèse basée sur les compositions et observations Ligue1.com de la semaine
+                Synthèse de la probabilité de titularisation, de la forme récente et du comparatif
               </p>
             </div>
             <span
@@ -626,136 +457,6 @@ export default function ProfileView({ player, onShowToast }: ProfileViewProps) {
               </li>
             ))}
           </ul>
-
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5 text-[10px] text-muted-text font-semibold">
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              {compos
-                ? `Données Ligue1.com mises à jour le ${new Date(compos.updatedAt).toLocaleString(
-                    "fr-FR",
-                    {
-                      day: "2-digit",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  )}`
-                : composLoading
-                  ? "Récupération des données Ligue1.com en cours…"
-                  : "Ligue1.com indisponible — verdict basé sur nos données internes"}
-            </span>
-            {compos && (
-              <a
-                href={compos.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 inline-flex items-center gap-1 font-bold text-primary-container underline underline-offset-2"
-              >
-                Source
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* 5. Prochaine composition probable — scrappée depuis ligue1.com */}
-        <div className="glass-card p-5 rounded-2xl border border-white/5 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold font-title-lg text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary-container" />
-                Prochaine Composition Probable
-              </h3>
-              <p className="text-xs text-muted-text font-medium">
-                Compositions probables de la journée de Ligue 1, analysées chaque semaine
-              </p>
-            </div>
-            <a
-              href={compos?.sourceUrl || LIGUE1_SOURCE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-primary-container/10 text-primary-container border border-primary-container/30 hover:bg-primary-container/20 transition-colors underline underline-offset-2 decoration-primary-container/50"
-            >
-              Voir sur Ligue1.com
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          {composLoading && (
-            <div className="flex items-center justify-center gap-2 py-10 text-muted-text text-sm font-medium">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Récupération des compositions en direct…
-            </div>
-          )}
-
-          {!composLoading && composError && (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <AlertTriangle className="w-6 h-6 text-stat-decrease" />
-              <p className="text-sm text-on-surface-variant font-medium">
-                Impossible de récupérer les compositions pour le moment.
-              </p>
-              <a
-                href={LIGUE1_SOURCE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-container underline underline-offset-2"
-              >
-                Consulter directement sur Ligue1.com
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          )}
-
-          {!composLoading && !composError && compos && (
-            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-              {orderedMatches.map((match, idx) => {
-                const isFeatured =
-                  teamMatches(match.homeTeam, player.team) ||
-                  teamMatches(match.awayTeam, player.team);
-                return (
-                  <div
-                    key={`${match.homeTeam}-${match.awayTeam}-${idx}`}
-                    className={`rounded-xl p-4 border ${
-                      isFeatured
-                        ? "bg-primary-container/5 border-primary-container/30"
-                        : "bg-surface-container-low border-white/5"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="text-sm font-bold text-white">
-                        {match.homeTeam} <span className="text-muted-text font-normal">vs</span>{" "}
-                        {match.awayTeam}
-                      </span>
-                      {match.kickoff && (
-                        <span className="shrink-0 text-[10px] text-muted-text bg-white/5 px-2 py-1 rounded-lg border border-white/5 font-semibold">
-                          {match.kickoff}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="space-y-2.5">
-                      {match.lineups.map((l, li) => (
-                        <div key={li} className="text-xs leading-relaxed">
-                          <span className="text-primary-container font-bold uppercase tracking-wide text-[10px] block mb-0.5">
-                            {l.label}
-                          </span>
-                          <span className="text-on-surface-variant">
-                            {highlightPlayer(l.lineup, player.name)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {compos.stale && (
-                <p className="text-[10px] text-muted-text text-center italic pt-1">
-                  Données mises en cache — le site source est momentanément indisponible.
-                </p>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>

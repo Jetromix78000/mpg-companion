@@ -1,4 +1,5 @@
 import { Router } from "express";
+<<<<<<< HEAD
 import { asyncHandler } from "../utils/asyncHandler";
 import {
   getDefaultLeagueId,
@@ -61,4 +62,19 @@ router.get(
   }),
 );
 
+=======
+import { MOCK_PLAYERS } from "../data/mock";
+
+const router = Router();
+
+/**
+ * TODO // Djamal — brancher SportMonks. C'est ta route, avec /api/football.
+ * Remplacer les mocks par getDashboard() de ./sportmonks. Garder la forme
+ * { topPlayers }. Vérifier d'abord la clé avec GET /api/football/health.
+ */
+router.get("/", (_req, res) => {
+  res.json({ topPlayers: MOCK_PLAYERS });
+});
+
+>>>>>>> 31b5070cd4779519d2c2670f740f109635006e5f
 export default router;

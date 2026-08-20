@@ -1,63 +1,45 @@
-import React, { useState } from "react";
-import { TransferMovement, Player } from "../types";
-import { MOCK_TRANSFERS, MOCK_PLAYERS } from "../data";
+import React, { useEffect, useState } from "react";
+import type { TransferMovement } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
+import { ViewError, ViewLoader } from "./ViewState";
+import { useAppDispatch, useAppSelector } from "../store";
+import { loadTransfers } from "../reducers/transfers";
 import { ArrowRight, RefreshCw, CheckCircle, TrendingUp, XCircle } from "lucide-react";
 
 interface MarketViewProps {
-  onSelectPlayer: (player: Player) => void;
+  /** Ouvre la fiche du joueur en repassant par la recherche serveur. */
+  onOpenPlayerByName: (name: string) => void;
   onShowToast: (message: string, type?: "success" | "warning") => void;
-  globalTeamFilter?: string | null;
 }
 
-type FilterType = "Tout" | "Officiel" | "Rumeurs" | "Ligue 1";
+// Tous les transferts sont déjà internes à la Ligue 1 (voir backend/data/mock.ts) :
+// il ne reste que le type de mouvement à filtrer.
+type FilterType = "Tout" | "Officiel" | "Rumeurs";
 
-export default function MarketView({
-  onSelectPlayer,
-  onShowToast,
-  globalTeamFilter,
-}: MarketViewProps) {
+export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketViewProps) {
+  const dispatch = useAppDispatch();
+  const { items: transfers, loading, error } = useAppSelector((state) => state.transfers);
+
   const [activeFilter, setActiveFilter] = useState<FilterType>("Tout");
+
+  useEffect(() => {
+    dispatch(loadTransfers());
+  }, [dispatch]);
 
   // Filter transfers based on type and club connections
   const getFilteredTransfers = () => {
     let list: TransferMovement[];
     switch (activeFilter) {
       case "Officiel":
-        list = MOCK_TRANSFERS.filter((t) => t.type === "Official" || t.type === "Prolongation");
+        list = transfers.filter((t) => t.type === "Official" || t.type === "Prolongation");
         break;
       case "Rumeurs":
-        list = MOCK_TRANSFERS.filter((t) => t.type === "Rumor");
+        list = transfers.filter((t) => t.type === "Rumor");
         break;
-      case "Ligue 1": {
-        // Transfers involving Ligue 1 teams: PSG, AS Monaco, FC Metz, etc.
-        const ligue1Teams = [
-          "PSG",
-          "AS Monaco",
-          "FC Metz",
-          "Paris Saint-Germain",
-          "Olympique Lyonnais",
-          "Olympique de Marseille",
-        ];
-        list = MOCK_TRANSFERS.filter(
-          (t) => ligue1Teams.includes(t.fromTeam) || ligue1Teams.includes(t.toTeam),
-        );
-        break;
-      }
       case "Tout":
       default:
-        list = MOCK_TRANSFERS;
+        list = transfers;
         break;
-    }
-
-    if (globalTeamFilter) {
-      const lowerFilter = globalTeamFilter.toLowerCase();
-      list = list.filter(
-        (t) =>
-          t.fromTeam.toLowerCase().includes(lowerFilter) ||
-          t.toTeam.toLowerCase().includes(lowerFilter) ||
-          t.playerName.toLowerCase().includes(lowerFilter),
-      );
     }
     return list;
   };
@@ -70,23 +52,13 @@ export default function MarketView({
   );
   const rumorsMovements = filteredTransfers.filter((t) => t.type === "Rumor");
 
-  // Navigate to player details if we have match in MOCK_PLAYERS
+  // La résolution du joueur se fait côté serveur : on ne connaît ici qu'un nom.
   const handleCardClick = (transfer: TransferMovement) => {
-    const playerMatch = MOCK_PLAYERS.find(
-      (p) =>
-        p.name.toLowerCase() === transfer.playerName.toLowerCase() ||
-        p.fullName.toLowerCase().includes(transfer.playerName.toLowerCase()),
+    onShowToast(
+      `${transfer.playerName} : ${transfer.fromTeam} ➔ ${transfer.toTeam} — ${transfer.description}`,
+      "success",
     );
-
-    if (playerMatch) {
-      onSelectPlayer(playerMatch);
-      onShowToast(`Chargement du profil de ${playerMatch.fullName}`, "success");
-    } else {
-      onShowToast(
-        `Détails du transfert : ${transfer.playerName} (${transfer.fromTeam} ➔ ${transfer.toTeam}) - ${transfer.description}`,
-        "success",
-      );
-    }
+    onOpenPlayerByName(transfer.playerName);
   };
 
   return (
@@ -102,7 +74,7 @@ export default function MarketView({
           </p>
         </div>
         <div className="flex flex-wrap gap-2 bg-surface-container-low p-1.5 rounded-2xl border border-white/5">
-          {(["Tout", "Officiel", "Rumeurs", "Ligue 1"] as FilterType[]).map((filter) => (
+          {(["Tout", "Officiel", "Rumeurs"] as FilterType[]).map((filter) => (
             <button
               key={filter}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-350 active:scale-95 ${
@@ -120,6 +92,9 @@ export default function MarketView({
           ))}
         </div>
       </div>
+
+      {loading && <ViewLoader label="Chargement du marché des transferts..." />}
+      {error && <ViewError message={error} onRetry={() => dispatch(loadTransfers())} />}
 
       {/* Section: Mouvements Confirmés */}
       {confirmedMovements.length > 0 && (
