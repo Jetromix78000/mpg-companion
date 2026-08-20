@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { TransferMovement } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
+import { ClubLogo } from "./ClubLogo";
 import { ViewError, ViewLoader } from "./ViewState";
 import { useAppDispatch, useAppSelector } from "../store";
 import { loadTransfers } from "../reducers/transfers";
@@ -16,29 +17,37 @@ interface MarketViewProps {
 // il ne reste que le type de mouvement à filtrer.
 type FilterType = "Tout" | "Officiel" | "Rumeurs";
 
+const PAGE_SIZE = 20;
+const SEASON_START = "2026-06-01";
+const today = () => new Date().toISOString().slice(0, 10);
+
 export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketViewProps) {
   const dispatch = useAppDispatch();
   const { items: transfers, loading, error } = useAppSelector((state) => state.transfers);
 
   const [activeFilter, setActiveFilter] = useState<FilterType>("Tout");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     dispatch(loadTransfers());
   }, [dispatch]);
+
+  // Fenêtre de mercato 2026 : du 1er juin à aujourd'hui.
+  const seasonTransfers = transfers.filter((t) => t.date >= SEASON_START && t.date <= today());
 
   // Filter transfers based on type and club connections
   const getFilteredTransfers = () => {
     let list: TransferMovement[];
     switch (activeFilter) {
       case "Officiel":
-        list = transfers.filter((t) => t.type === "Official" || t.type === "Prolongation");
+        list = seasonTransfers.filter((t) => t.type === "Official" || t.type === "Prolongation");
         break;
       case "Rumeurs":
-        list = transfers.filter((t) => t.type === "Rumor");
+        list = seasonTransfers.filter((t) => t.type === "Rumor");
         break;
       case "Tout":
       default:
-        list = transfers;
+        list = seasonTransfers;
         break;
     }
     return list;
@@ -46,11 +55,24 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
 
   const filteredTransfers = getFilteredTransfers();
 
+  const totalPages = Math.max(1, Math.ceil(filteredTransfers.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageTransfers = filteredTransfers.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
+
+  const handleFilterChange = (filter: FilterType) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+    onShowToast(`Filtre appliqué : ${filter}`, "success");
+  };
+
   // Separate confirmed vs rumors for rendering layout headers
-  const confirmedMovements = filteredTransfers.filter(
+  const confirmedMovements = pageTransfers.filter(
     (t) => t.type === "Official" || t.type === "Prolongation",
   );
-  const rumorsMovements = filteredTransfers.filter((t) => t.type === "Rumor");
+  const rumorsMovements = pageTransfers.filter((t) => t.type === "Rumor");
 
   // La résolution du joueur se fait côté serveur : on ne connaît ici qu'un nom.
   const handleCardClick = (transfer: TransferMovement) => {
@@ -82,10 +104,7 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
                   ? "bg-primary-container text-on-primary-container shadow-md"
                   : "text-on-surface-variant hover:text-white hover:bg-white/5"
               }`}
-              onClick={() => {
-                setActiveFilter(filter);
-                onShowToast(`Filtre appliqué : ${filter}`, "success");
-              }}
+              onClick={() => handleFilterChange(filter)}
             >
               {filter}
             </button>
@@ -137,14 +156,16 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
                   {t.playerName}
                 </h3>
 
-                <div className="flex items-center gap-2 text-xs text-muted-text mb-4 flex-wrap font-semibold">
-                  <span className="text-white truncate max-w-[80px]">{t.fromTeam}</span>
+                <div className="flex items-center gap-1.5 text-xs text-muted-text mb-4 font-semibold">
+                  <ClubLogo src={t.fromTeamLogo} name={t.fromTeam} />
+                  <span className="text-white truncate max-w-[60px]">{t.fromTeam}</span>
                   {t.type === "Prolongation" ? (
                     <RefreshCw className="w-3.5 h-3.5 text-muted-text shrink-0 animate-spin-slow" />
                   ) : (
                     <ArrowRight className="w-3.5 h-3.5 text-muted-text shrink-0" />
                   )}
-                  <span className="text-secondary truncate max-w-[80px]">{t.toTeam}</span>
+                  <ClubLogo src={t.toTeamLogo} name={t.toTeam} />
+                  <span className="text-secondary truncate max-w-[60px]">{t.toTeam}</span>
                 </div>
 
                 <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2 mb-4 flex-grow font-medium">
@@ -215,11 +236,13 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
                   {t.playerName}
                 </h3>
 
-                <div className="flex items-center gap-2 text-xs text-muted-text mb-4 flex-wrap font-semibold">
-                  <span className="text-white truncate max-w-[80px]">{t.fromTeam}</span>
+                <div className="flex items-center gap-1.5 text-xs text-muted-text mb-4 font-semibold">
+                  <ClubLogo src={t.fromTeamLogo} name={t.fromTeam} />
+                  <span className="text-white truncate max-w-[60px]">{t.fromTeam}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-muted-text shrink-0" />
+                  <ClubLogo src={t.toTeamLogo} name={t.toTeam} />
                   <span
-                    className={`truncate max-w-[80px] ${
+                    className={`truncate max-w-[60px] ${
                       (t.confidence || 0) > 70
                         ? "text-primary-container"
                         : (t.confidence || 0) > 40
@@ -261,6 +284,28 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
             ))}
           </div>
         </section>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 pt-4">
+          <button
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-surface-container-low border border-white/5 text-on-surface-variant hover:text-white hover:bg-white/5 transition-all duration-350 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={safePage <= 1}
+          >
+            Précédent
+          </button>
+          <span className="text-xs font-bold text-on-surface-variant">
+            Page {safePage} / {totalPages}
+          </span>
+          <button
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-surface-container-low border border-white/5 text-on-surface-variant hover:text-white hover:bg-white/5 transition-all duration-350 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage >= totalPages}
+          >
+            Suivant
+          </button>
+        </div>
       )}
     </div>
   );

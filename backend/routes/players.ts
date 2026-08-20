@@ -5,8 +5,9 @@ import { matchPlayer } from "../../shared/search";
 const router = Router();
 
 /**
- * TODO // Djamal — brancher SportMonks.
- * Remplacer MOCK_PLAYERS par searchPlayers() / getPlayerById() de ./sportmonks.
+ * TODO // Djamal — brancher API Football.
+ * Remplacer MOCK_PLAYERS par un appel GET /players?search={name} et GET /players?id={id}
+ * (voir backend/routes/transfers.ts pour le pattern fetch + clé + mapping).
  * Garder les formes { players } et { player } : le front n'a pas à changer.
  *
  * /search doit rester déclarée AVANT /:id, sinon "search" est pris pour un identifiant.

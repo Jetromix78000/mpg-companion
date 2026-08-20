@@ -31,15 +31,16 @@ app.use("/api", (req, res, next) => {
 // Le reste du site reste accessible sans compte.
 app.use("/api/auth", authRouter);
 
-// Les quatre fonctionnalités data du MVP. Elles répondent aujourd'hui avec les
-// mocks de data/mock.ts, sous le contrat de réponse définitif : brancher SportMonks
-// ne changera que le corps des handlers (voir les TODO // Djamal dans chaque route).
+// Les fonctionnalités data du MVP. dashboard/players/injuries répondent aujourd'hui
+// avec les mocks de data/mock.ts, sous le contrat de réponse définitif : brancher
+// API Football ne changera que le corps des handlers (voir les TODO // Djamal).
 app.use("/api/dashboard", dashboardRouter);
+// transfers est déjà branché sur la vraie API Football (voir routes/transfers.ts).
 app.use("/api/transfers", transfersRouter);
 app.use("/api/players", playersRouter);
 app.use("/api/injuries", injuriesRouter);
 
-// Seule route déjà branchée sur la vraie API SportMonks : /football/health.
+// Route de contrôle : vérifie que la clé API Football fonctionne.
 app.use("/api/football", footballRouter);
 
 /**
