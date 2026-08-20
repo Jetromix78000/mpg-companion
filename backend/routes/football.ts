@@ -13,7 +13,8 @@ const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY?.trim() ?? "";
  *
  * Vérifie que la clé API_FOOTBALL_KEY fonctionne via l'endpoint le moins coûteux
  * d'API Football (`curl localhost:3000/api/football/health`) : sans 200 ici,
- * inutile d'attaquer les routes métier.
+ * inutile d'attaquer les routes métier. Pour les routes football à ajouter
+ * ensuite, réutilise le pattern fetch + clé + mapping de backend/routes/injuries.ts.
  */
 router.get("/health", async (_req, res) => {
   if (!API_FOOTBALL_KEY) {
@@ -31,8 +32,8 @@ router.get("/health", async (_req, res) => {
         .json({ ok: false, error: `Erreur API Football (HTTP ${response.status})` });
     }
 
-    const body = (await response.json()) as { response: unknown };
-    res.json({ ok: true, baseUrl: API_FOOTBALL_BASE_URL, status: body.response });
+    const body = (await response.json()) as { response?: unknown };
+    res.json({ ok: true, baseUrl: API_FOOTBALL_BASE_URL, status: body.response ?? null });
   } catch (error: unknown) {
     res.status(504).json({
       ok: false,

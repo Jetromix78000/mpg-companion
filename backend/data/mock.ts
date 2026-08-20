@@ -278,6 +278,7 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     description: "Transfert sec, contrat de cinq ans signé après une saison à onze buts.",
     amount: "12 M€",
     time: "IL Y A 3 HEURES",
+    date: "2026-08-20",
     type: "Official",
   },
   {
@@ -289,6 +290,7 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     description: "Prolongation jusqu'en 2029, avec revalorisation salariale.",
     amount: "—",
     time: "IL Y A 6 HEURES",
+    date: "2026-08-20",
     type: "Prolongation",
   },
   {
@@ -300,6 +302,7 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     description: "Retour au club formateur, le latéral gauche s'engage pour trois saisons.",
     amount: "8 M€",
     time: "HIER",
+    date: "2026-08-19",
     type: "Official",
   },
   {
@@ -311,6 +314,7 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     description: "Prolongation d'un an, avec une année supplémentaire en option.",
     amount: "—",
     time: "HIER",
+    date: "2026-08-19",
     type: "Prolongation",
   },
   {
@@ -322,6 +326,7 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     description: "Premier contact monégasque, Lyon fixe son prix à 25 M€.",
     amount: "25 M€",
     time: "IL Y A 1 JOUR",
+    date: "2026-08-19",
     type: "Rumor",
     confidence: 45,
     statusLabel: "Négociations",
@@ -335,6 +340,7 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     description: "Lens cherche un patron défensif, Lyon écoute les offres au-delà de 10 M€.",
     amount: "10 M€",
     time: "IL Y A 2 JOURS",
+    date: "2026-08-18",
     type: "Rumor",
     confidence: 62,
     statusLabel: "Dossier très chaud",
@@ -348,6 +354,7 @@ export const MOCK_TRANSFERS: TransferMovement[] = [
     description: "Piste explorée par l'OM, jugée irréaliste par l'entourage du joueur.",
     amount: "60 M€",
     time: "IL Y A 2 JOURS",
+    date: "2026-08-18",
     type: "Rumor",
     confidence: 12,
     statusLabel: "Refusé",

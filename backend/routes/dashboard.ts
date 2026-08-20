@@ -5,8 +5,8 @@ const router = Router();
 
 /**
  * TODO // Djamal — brancher API Football. C'est ta route, avec /api/football.
- * Remplacer les mocks par un appel API Football, garder la forme { topPlayers }.
- * Vérifier d'abord la clé avec GET /api/football/health.
+ * Remplacer les mocks par un appel API Football agrégeant les stats joueurs.
+ * Garder la forme { topPlayers }. Vérifier d'abord la clé avec GET /api/football/health.
  */
 router.get("/", (_req, res) => {
   res.json({ topPlayers: MOCK_PLAYERS });
