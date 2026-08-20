@@ -4,7 +4,9 @@ import { PlayerAvatar } from "./PlayerAvatar";
 import { ViewError, ViewLoader } from "./ViewState";
 import { useAppDispatch, useAppSelector } from "../store";
 import { loadInjuries } from "../reducers/injuries";
-import { HeartCrack, Calendar, Search } from "lucide-react";
+import { HeartCrack, Calendar, Search, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 20;
 
 interface InjuriesViewProps {
   /** Ouvre la fiche du joueur en repassant par la recherche serveur. */
@@ -25,6 +27,7 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
     "Tous",
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Un seul championnat désormais (Ligue 1) : plus de filtre par ligue, ni de
   // recherche globale d'équipe — le club et le statut suffisent.
@@ -54,14 +57,22 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
     });
   }, [injuries, selectedClub, activeStatusFilter, searchQuery]);
 
+  // Changer de filtre invalide la page courante : repartir en page 1 évite un
+  // tableau vide si la page active dépasse le nouveau total filtré.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedClub, activeStatusFilter, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredInjuries.length / PAGE_SIZE));
+  const paginatedInjuries = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredInjuries.slice(start, start + PAGE_SIZE);
+  }, [filteredInjuries, currentPage]);
+
   // La résolution du joueur se fait côté serveur : on ne connaît ici qu'un nom.
   const handleInjuryRowClick = (injury: InjuryItem) => {
     onShowToast(`${injury.playerName} — ${injury.type} : ${injury.detail}`, "success");
     onOpenPlayerByName(injury.playerName);
-  };
-
-  const handleLoadMore = () => {
-    onShowToast("Chargement de 10 joueurs supplémentaires (simulé)", "success");
   };
 
   return (
@@ -187,8 +198,8 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 font-medium text-sm">
-              {filteredInjuries.length > 0 ? (
-                filteredInjuries.map((injury) => (
+              {paginatedInjuries.length > 0 ? (
+                paginatedInjuries.map((injury) => (
                   <tr
                     key={injury.id}
                     className="hover:bg-white/5 cursor-pointer transition-all duration-200 group"
@@ -297,16 +308,32 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
           </table>
         </div>
 
-        {/* Load More section */}
-        <div className="p-6 flex flex-col items-center justify-center border-t border-white/5 bg-surface-container-low">
-          <button
-            className="bg-surface-container-high hover:bg-surface-variant text-white font-bold px-8 py-3 rounded-xl transition-all active:scale-95 border border-white/5 text-xs uppercase tracking-wider"
-            onClick={handleLoadMore}
-          >
-            Charger plus de joueurs blessés
-          </button>
-          <p className="mt-3 text-xs text-muted-text italic font-medium">
-            Affichage de {filteredInjuries.length} de {injuries.length} blessures recensées
+        {/* Pagination */}
+        <div className="p-6 flex flex-col items-center justify-center gap-3 border-t border-white/5 bg-surface-container-low">
+          <div className="flex items-center gap-2">
+            <button
+              className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              aria-label="Page précédente"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-bold text-white px-3">
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={currentPage === totalPages}
+              aria-label="Page suivante"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-muted-text italic font-medium">
+            Affichage de {paginatedInjuries.length} sur {filteredInjuries.length} blessures
+            {filteredInjuries.length !== injuries.length ? ` (${injuries.length} au total)` : ""}
           </p>
         </div>
       </section>

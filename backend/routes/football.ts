@@ -1,35 +1,43 @@
 import { Router } from "express";
-import { SPORTMONKS_BASE_URL, SportmonksError, sportmonksFetchEnvelope } from "./sportmonks";
+import dotenv from "dotenv";
+
+dotenv.config({ quiet: true });
 
 const router = Router();
+
+const API_FOOTBALL_BASE_URL = "https://v3.football.api-sports.io";
+const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY?.trim() ?? "";
 
 /**
  * TODO // Djamal — c'est ton point d'entrée sur le projet, avec /api/dashboard.
  *
- * Seule route déjà branchée sur la vraie API : elle appelle l'endpoint le moins
- * coûteux de SportMonks pour vérifier que la clé SPORTMONKS_API_TOKEN fonctionne.
- * Commence par elle (`curl localhost:3000/api/football/health`) : sans 200 ici,
+ * Vérifie que la clé API_FOOTBALL_KEY fonctionne via l'endpoint le moins coûteux
+ * d'API Football (`curl localhost:3000/api/football/health`) : sans 200 ici,
  * inutile d'attaquer les routes métier.
- *
- * À faire ensuite : ajouter les routes football dont tu as besoin, en réutilisant
- * sportmonksFetch() de ./sportmonks — toute la plomberie (auth, paramètres,
- * déballage de l'enveloppe, traduction des erreurs) est déjà écrite.
  */
 router.get("/health", async (_req, res) => {
-  try {
-    const envelope = await sportmonksFetchEnvelope<unknown[]>("/leagues", { perPage: 1 });
+  if (!API_FOOTBALL_KEY) {
+    return res.status(503).json({ ok: false, error: "API_FOOTBALL_KEY non configuré" });
+  }
 
-    res.json({
-      ok: true,
-      baseUrl: SPORTMONKS_BASE_URL,
-      rateLimit: envelope.rate_limit ?? null,
-      subscription: envelope.subscription ?? null,
+  try {
+    const response = await fetch(`${API_FOOTBALL_BASE_URL}/status`, {
+      headers: { "x-apisports-key": API_FOOTBALL_KEY },
     });
-  } catch (error: unknown) {
-    if (error instanceof SportmonksError) {
-      return res.status(error.status).json({ ok: false, error: error.message });
+
+    if (!response.ok) {
+      return res
+        .status(response.status)
+        .json({ ok: false, error: `Erreur API Football (HTTP ${response.status})` });
     }
-    throw error;
+
+    const body = (await response.json()) as { response: unknown };
+    res.json({ ok: true, baseUrl: API_FOOTBALL_BASE_URL, status: body.response });
+  } catch (error: unknown) {
+    res.status(504).json({
+      ok: false,
+      error: `API Football injoignable : ${error instanceof Error ? error.message : String(error)}`,
+    });
   }
 });
 

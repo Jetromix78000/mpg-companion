@@ -30,6 +30,7 @@
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-redux": "^9.3.0",
+    "react-router-dom": "^7.18.2",
     "uid2": "^1.0.0",
     "vite": "^6.2.3"
   },

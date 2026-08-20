@@ -3,7 +3,7 @@ import { InjuryStatus, type InjuryItem, type Player, type TransferMovement } fro
 /**
  * Jeu de données de démonstration, limité à la Ligue 1.
  *
- * C'est la seule source de vérité football tant que SportMonks n'est pas branché
+ * C'est la seule source de vérité football tant qu'API Football n'est pas branché
  * (voir les TODO // Djamal dans backend/routes). Les routes servent ces objets tels
  * quels, sous le contrat de réponse définitif : les remplacer par l'API réelle ne
  * touchera ni le front ni la forme des réponses.

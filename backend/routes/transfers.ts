@@ -4,9 +4,9 @@ import { MOCK_TRANSFERS } from "../data/mock";
 const router = Router();
 
 /**
- * TODO // Romain — brancher SportMonks.
- * Remplacer les mocks par getLatestTransfers() de ./sportmonks. Garder la
- * forme { transfers }. Limite connue : SportMonks ne publie que des transferts actés,
+ * TODO // Romain — brancher API Football.
+ * Remplacer les mocks par un appel API Football, garder la forme { transfers }.
+ * Limite connue : pas de flux "derniers transferts" global côté API Football,
  * les entrées de type "Rumor" n'ont pas d'équivalent.
  */
 router.get("/", (_req, res) => {
