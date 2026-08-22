@@ -1,7 +1,8 @@
 import { Router } from "express";
 import dotenv from "dotenv";
-import { normalizeText } from "../../shared/search";
+import { lastNameToken, normalizeText } from "../../shared/search";
 import { InjuryStatus, type InjuryItem } from "../../shared/types";
+import { rememberPhoto } from "../photoCache";
 
 dotenv.config({ quiet: true });
 
@@ -54,10 +55,11 @@ interface ApiFootballBody {
   response: ApiFootballInjury[];
 }
 
-/** Vrai si le nom renvoyé par l'API correspond à un joueur suivi. */
+/** L'API abrège en "Initiale. Nom" : on compare le dernier mot, pas une sous-chaîne
+ *  ("David Luiz" ne doit pas matcher "David"). */
 function isTracked(apiName: string): boolean {
-  const normalizedApiName = normalizeText(apiName);
-  return TRACKED_PLAYERS.some((player) => normalizedApiName.includes(normalizeText(player)));
+  const surname = lastNameToken(apiName);
+  return TRACKED_PLAYERS.some((player) => normalizeText(player) === surname);
 }
 
 /**
@@ -104,10 +106,10 @@ injuriesRouter.get("/", (req, res) => {
           .json()
           .catch(() => null)
           .then((body: ApiFootballBody | null) => {
-            res.status(response.status).json({
-              error: `Erreur API Football (HTTP ${response.status})`,
-              details: body?.errors,
-            });
+            console.error(`Erreur API Football (HTTP ${response.status}) :`, body?.errors);
+            res
+              .status(response.status)
+              .json({ error: "Les données de football sont actuellement indisponibles ..." });
             return null; // stoppe la suite : le .then d'après ne fera rien
           });
       }
@@ -120,7 +122,7 @@ injuriesRouter.get("/", (req, res) => {
       // Le typage n'est qu'une promesse faite à TypeScript : on vérifie la forme
       // réelle avant de s'en servir, sinon une API qui change fait planter la boucle.
       if (!Array.isArray(data.response)) {
-        res.status(502).json({ error: "Réponse API Football inattendue" });
+        res.status(502).json({ error: "Les données de football sont actuellement indisponibles ..." });
         return;
       }
 
@@ -129,7 +131,10 @@ injuriesRouter.get("/", (req, res) => {
       const errorCount = Array.isArray(errors) ? errors.length : Object.keys(errors).length;
 
       if (errorCount > 0) {
-        res.status(502).json({ error: "API Football a répondu une erreur", details: errors });
+        // Le détail (quota, compte suspendu) reste dans les logs : côté client on
+        // ne montre qu'un message lisible.
+        console.error("API Football a répondu une erreur :", errors);
+        res.status(502).json({ error: "Les données de football sont actuellement indisponibles ..." });
         return;
       }
 
@@ -158,6 +163,8 @@ injuriesRouter.get("/", (req, res) => {
       const injuries: InjuryItem[] = [];
 
       for (const { injury, missedMatches } of byPlayer.values()) {
+        rememberPhoto(lastNameToken(injury.player.name), injury.player.photo);
+
         injuries.push({
           id: String(injury.player.id),
           playerName: injury.player.name,
@@ -184,10 +191,7 @@ injuriesRouter.get("/", (req, res) => {
       // Attrape tout ce qui casse au-dessus : réseau coupé, JSON illisible, bug du code.
       console.error(`Erreur sur ${req.method} ${req.originalUrl} :`, error);
 
-      const isTimeout = error instanceof Error && error.name === "TimeoutError";
-      res.status(504).json({
-        error: isTimeout ? "API Football n'a pas répondu" : "API Football injoignable",
-      });
+      res.status(504).json({ error: "Les données de football sont actuellement indisponibles ..." });
     });
 });
 

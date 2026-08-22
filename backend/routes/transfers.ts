@@ -2,63 +2,56 @@ import fs from "fs/promises";
 import path from "path";
 import { Router } from "express";
 import dotenv from "dotenv";
+import { lastNameToken, normalizeText } from "../../shared/search";
 import type { TransferMovement } from "../../shared/types";
+import { getPhoto } from "../photoCache";
 
 dotenv.config({ quiet: true });
 
+/**
+ * Marché des transferts. Monté sur "/api/transfers" dans app.ts.
+ * /transfers n'accepte que `team` ou `player`, jamais `league` : on liste donc
+ * les clubs de Ligue 1, on garde ceux des joueurs suivis, puis on appelle
+ * /transfers?team= pour chacun — 7 requêtes par reconstruction au lieu de 20.
+ */
 const router = Router();
 
-const API_FOOTBALL_BASE_URL = "https://v3.football.api-sports.io";
 const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY?.trim() ?? "";
+const TEAMS_URL = "https://v3.football.api-sports.io/teams?league=61&season=2024";
+const transferUrl = (teamId: number) => `https://v3.football.api-sports.io/transfers?team=${teamId}`;
 
-const LIGUE_1_LEAGUE_ID = 61;
+/** Mêmes joueurs suivis que backend/routes/injuries.ts, pour alléger les requêtes. */
+const TRACKED_PLAYERS = [
+  "Dembele", // Paris Saint Germain
+  "David", // Lille
+  "Lacazette", // Lyon
+  "Emegha", // Strasbourg
+  "Gouiri", // Marseille
+  "Ajorque", // Stade Brestois 29
+];
+const TRACKED_CLUBS = ["Paris Saint Germain", "Lille", "Lyon", "Strasbourg", "Marseille", "Stade Brestois"];
 
-/**
- * L'endpoint /transfers n'accepte que `team` ou `player`, jamais `league` :
- * passer `league=61` renvoie une réponse vide sans erreur HTTP. Il faut donc
- * lister les clubs de Ligue 1, puis interroger les transferts club par club.
- *
- * La liste des clubs vient de la saison 2024 : le plan Free d'API Football
- * refuse tout ce qui dépasse ("Free plans do not have access to this season,
- * try from 2022 to 2024"). L'effectif est donc celui de 2024/2025, mais les
- * transferts renvoyés par /transfers?team= couvrent bien toute l'histoire du
- * club, 2026 compris.
- */
-const TEAMS_SEASON = 2024;
+/** L'API abrège en "Initiale. Nom" : on compare le dernier mot, pas une sous-chaîne
+ *  ("David Luiz" ne doit pas matcher "David"). */
+function isTracked(name: string): boolean {
+  const surname = lastNameToken(name);
+  return TRACKED_PLAYERS.some((player) => normalizeText(player) === surname);
+}
 
-/**
- * Plan Free : 100 requêtes par jour. Un rafraîchissement complet en coûte 20
- * (1 pour les clubs + 19 pour les transferts), et `tsx` relance le serveur à
- * chaque sauvegarde — un cache en mémoire seul viderait le quota en trois
- * redémarrages. D'où le cache sur disque, qui survit aux relances.
- */
+/** Cache sur disque : plan Free = 100 req/jour, et tsx redémarre à chaque save. */
 const CACHE_FILE = path.join(process.cwd(), ".cache", "transfers.json");
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
-/**
- * Le plan Free plafonne aussi à 10 requêtes par minute (en-tête
- * `x-ratelimit-limit`), au-delà l'API répond 200 avec `errors.rateLimit`.
- * On espace donc les appels : 20 requêtes prennent un peu plus de deux minutes,
- * d'où le rafraîchissement en arrière-plan plus bas.
- */
-const MIN_REQUEST_INTERVAL_MS = 7_000;
+/** Plan Free = 10 req/min : on espace les appels d'une reconstruction. */
+const REQUEST_DELAY_MS = 7_000;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-interface ApiFootballTeamRef {
-  id: number;
-  name: string;
-  logo: string;
+interface ApiFootballTeam {
+  team: { id: number; name: string; logo: string };
 }
 
-interface ApiFootballTeamEntry {
-  team: ApiFootballTeamRef;
-}
-
-/**
- * Sur /transfers, un club peut arriver incomplet : soit sans identifiant ni
- * écusson (`{ id: null, name: "Juventus FC", logo: null }`), soit entièrement
- * vide. Le typer en `| null` évite de propager des `fromTeam: null` jusqu'au front.
- */
-interface ApiFootballTransferTeamRef {
+/** Sur /transfers, un club peut arriver sans id ni écusson, voire vide. */
+interface ApiFootballTransferTeam {
   id: number | null;
   name: string | null;
   logo: string | null;
@@ -67,7 +60,7 @@ interface ApiFootballTransferTeamRef {
 interface ApiFootballTransfer {
   date: string;
   type: string | null;
-  teams: { in: ApiFootballTransferTeamRef | null; out: ApiFootballTransferTeamRef | null };
+  teams: { in: ApiFootballTransferTeam | null; out: ApiFootballTransferTeam | null };
 }
 
 interface ApiFootballTransferEntry {
@@ -75,86 +68,9 @@ interface ApiFootballTransferEntry {
   transfers: ApiFootballTransfer[];
 }
 
-/** Erreur portant le statut HTTP à renvoyer au client. */
-class ApiFootballError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-    this.name = "ApiFootballError";
-  }
-}
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * File d'attente d'un seul créneau à la fois : chaque appel réserve le suivant,
- * ce qui espace les requêtes sans avoir à compter les fenêtres glissantes.
- */
-let nextRequestSlot = 0;
-
-async function waitForSlot(): Promise<void> {
-  const now = Date.now();
-  const slot = Math.max(now, nextRequestSlot);
-  nextRequestSlot = slot + MIN_REQUEST_INTERVAL_MS;
-  if (slot > now) await sleep(slot - now);
-}
-
-/**
- * Appel API Football. Les erreurs métier arrivent en HTTP 200 avec un objet
- * `errors` rempli (quota dépassé, débit dépassé, saison hors plan) : les ignorer
- * donnerait une liste vide silencieuse, comme avec `league=61` sur /transfers.
- */
-async function apiFootballFetch<T>(endpoint: string, retriesLeft = 1): Promise<T[]> {
-  await waitForSlot();
-
-  let response: Response;
-  try {
-    response = await fetch(`${API_FOOTBALL_BASE_URL}${endpoint}`, {
-      headers: { "x-apisports-key": API_FOOTBALL_KEY },
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch (error: unknown) {
-    throw new ApiFootballError(
-      `API Football injoignable : ${error instanceof Error ? error.message : String(error)}`,
-      504,
-    );
-  }
-
-  if (response.status === 429) {
-    if (retriesLeft <= 0) throw new ApiFootballError("Débit API Football dépassé", 429);
-    await sleep(60_000);
-    return apiFootballFetch<T>(endpoint, retriesLeft - 1);
-  }
-
-  if (!response.ok) {
-    throw new ApiFootballError(`Erreur API Football (HTTP ${response.status})`, response.status);
-  }
-
-  const body = (await response.json()) as { response?: T[]; errors?: unknown };
-
-  // `errors` est [] quand tout va bien, un objet { champ: message } sinon.
-  const errors = body.errors;
-  if (errors && !Array.isArray(errors) && Object.keys(errors).length > 0) {
-    const detail = Object.values(errors as Record<string, string>).join(" ; ");
-
-    // Débit dépassé : on laisse passer une minute plutôt que d'abandonner la
-    // construction du cache en cours de route.
-    if (/too many requests/i.test(detail) && retriesLeft > 0) {
-      await sleep(60_000);
-      return apiFootballFetch<T>(endpoint, retriesLeft - 1);
-    }
-
-    throw new ApiFootballError(`API Football : ${detail}`, 502);
-  }
-
-  return body.response ?? [];
-}
-
-/** Écart en jours entre deux dates ISO (YYYY-MM-DD). */
-function daysBetween(from: string, to: string): number {
-  return Math.abs(Date.parse(to) - Date.parse(from)) / 86_400_000;
+interface ApiFootballBody<T> {
+  errors: string[] | Record<string, string>;
+  response: T[];
 }
 
 /** "2026-06-29" -> "29 JUIN 2026", pour la ligne de bas de carte du front. */
@@ -162,18 +78,13 @@ const MONTHS = [
   "JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN",
   "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE",
 ];
-
 function formatFrenchDate(isoDate: string): string {
   const [year, month, day] = isoDate.split("-");
   const label = MONTHS[Number(month) - 1];
   return label ? `${Number(day)} ${label} ${year}` : isoDate;
 }
 
-/**
- * `type` vaut soit un montant ("€ 60M"), soit un libellé ("Free agent", "Loan",
- * "Return from loan"). On sépare les deux : le montant va dans `amount`, le
- * libellé dans `description`.
- */
+/** `type` vaut soit un montant ("€ 60M"), soit un libellé ("Free agent", "Loan"...). */
 function describeTransfer(type: string | null): { amount: string; description: string } {
   if (!type || type === "N/A") return { amount: "—", description: "Transfert" };
   if (type.startsWith("€") || type.startsWith("$") || type.startsWith("£")) {
@@ -192,96 +103,72 @@ function describeTransfer(type: string | null): { amount: string; description: s
   return { amount: "—", description: labels[type] ?? type };
 }
 
-/**
- * Aplatit, déduplique et convertit les réponses API Football.
- *
- * Deux sources de doublons :
- *  - un mouvement entre deux clubs de Ligue 1 apparaît dans la réponse des deux
- *    clubs, à l'identique ;
- *  - API Football enregistre souvent le même mouvement sur deux dates
- *    consécutives (Kolo Muani au 31/07 *et* au 01/08). L'écart pouvant franchir
- *    un changement de mois, on compare des dates, pas des chaînes.
- */
-function mapTransfers(entries: ApiFootballTransferEntry[]): TransferMovement[] {
-  /**
-   * Mouvement déjà validé. On extrait les champs nullables du brut d'API une
-   * seule fois, au moment du contrôle : le regroupement se fait sur deux boucles,
-   * et un test sur `movement.teams.in` dans la première ne restreindrait pas le
-   * type dans la seconde. Transporter les valeurs plutôt que l'objet brut évite
-   * autant les assertions `!` que les re-tests.
-   */
-  interface Row {
-    playerName: string;
-    date: string;
-    type: string | null;
-    fromTeam: string;
-    toTeam: string;
-    fromTeamLogo: string | null;
-    toTeamLogo: string | null;
-  }
+/** GET authentifié sur API Football. Renvoie `response`, ou lève si `errors` est rempli. */
+function apiFootballGet<T>(url: string): Promise<T[]> {
+  return fetch(url, {
+    headers: { "x-apisports-key": API_FOOTBALL_KEY },
+    // Sans ça, fetch attend indéfiniment si API Football ne répond jamais.
+    signal: AbortSignal.timeout(10_000),
+  })
+    .then((response) => {
+      // Sur un non-2xx (clé invalide = 403), API Football renvoie quand même du
+      // JSON : on le lit pour remonter son message plutôt qu'un code sec. Le
+      // .catch couvre le cas où le corps n'est pas du JSON (page d'erreur HTML).
+      if (!response.ok) {
+        return response
+          .json()
+          .catch(() => null)
+          .then((body: ApiFootballBody<T> | null) => {
+            throw new Error(`Erreur API Football (HTTP ${response.status}) : ${JSON.stringify(body?.errors)}`);
+          });
+      }
 
-  // Regroupe par joueur + trajet, pour ne comparer les dates qu'entre mouvements
-  // réellement identiques. Un aller-retour en prêt des années plus tard reste
-  // deux mouvements distincts.
-  const byRoute = new Map<string, Row[]>();
+      return response.json() as Promise<ApiFootballBody<T>>;
+    })
+    .then((body) => {
+      // Quota dépassé, débit dépassé, saison hors plan : l'API répond 200 avec `errors` rempli.
+      const errors = body.errors ?? [];
+      const errorCount = Array.isArray(errors) ? errors.length : Object.keys(errors).length;
+      if (errorCount > 0) throw new Error(`API Football : ${JSON.stringify(errors)}`);
+
+      return body.response ?? [];
+    });
+}
+
+/** Aplatit les transferts de tous les clubs, dédupliqué par joueur + trajet + date proche. */
+function mapTransfers(entries: ApiFootballTransferEntry[]): TransferMovement[] {
+  const seen = new Set<string>();
+  const transfers: TransferMovement[] = [];
 
   for (const entry of entries) {
+    if (!isTracked(entry.player.name)) continue;
+
     for (const movement of entry.transfers) {
       const from = movement.teams?.out;
       const to = movement.teams?.in;
-
-      // Sans nom des deux clubs, la carte « X ➔ Y » n'a rien à afficher :
-      // on écarte le mouvement plutôt que de rendre une flèche vers du vide.
       if (!movement.date || !from?.name || !to?.name) continue;
 
-      const route = `${entry.player.id}-${from.id}-${to.id}`;
-      const row: Row = {
-        playerName: entry.player.name,
-        date: movement.date,
-        type: movement.type,
-        fromTeam: from.name,
-        toTeam: to.name,
-        fromTeamLogo: from.logo,
-        toTeamLogo: to.logo,
-      };
+      // Même trajet le même mois : un club de Ligue 1 apparaît des deux côtés, et
+      // l'API réenregistre parfois le même mouvement à un jour d'écart.
+      const key = `${entry.player.id}-${from.id}-${to.id}-${movement.date.slice(0, 7)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-      const rows = byRoute.get(route);
-      if (rows) rows.push(row);
-      else byRoute.set(route, [row]);
-    }
-  }
-
-  const transfers: TransferMovement[] = [];
-
-  for (const [route, rows] of byRoute) {
-    rows.sort((a, b) => a.date.localeCompare(b.date));
-
-    let previousDate: string | null = null;
-    for (const row of rows) {
-      // Même trajet à un ou deux jours d'intervalle : c'est le même transfert,
-      // ré-enregistré par l'API. On ne garde que la première occurrence.
-      if (previousDate && daysBetween(previousDate, row.date) <= 2) continue;
-      previousDate = row.date;
-
-      const { amount, description } = describeTransfer(row.type);
+      const { amount, description } = describeTransfer(movement.type);
 
       transfers.push({
-        // Clé unique et stable pour le rendu de liste côté front : le seul
-        // identifiant joueur ne suffit pas, un joueur a plusieurs transferts.
-        id: `${route}-${row.date}`,
-        playerName: row.playerName,
-        avatarUrl: "", // API Football ne renvoie pas de photo ici : PlayerAvatar affiche les initiales.
-        fromTeam: row.fromTeam,
-        toTeam: row.toTeam,
-        // Le contrat front déclare ces champs optionnels : `undefined`, pas `null`.
-        fromTeamLogo: row.fromTeamLogo ?? undefined,
-        toTeamLogo: row.toTeamLogo ?? undefined,
+        id: `${entry.player.id}-${from.id}-${to.id}-${movement.date}`,
+        playerName: entry.player.name,
+        // Photo récupérée depuis /api/injuries si déjà visitée, sinon initiales côté front.
+        avatarUrl: getPhoto(lastNameToken(entry.player.name)),
+        fromTeam: from.name,
+        toTeam: to.name,
+        fromTeamLogo: from.logo ?? undefined,
+        toTeamLogo: to.logo ?? undefined,
         description,
         amount,
-        time: formatFrenchDate(row.date),
-        date: row.date,
-        // API Football ne publie que des transferts actés : pas d'équivalent
-        // aux types "Rumor" et "Prolongation" du contrat de réponse.
+        time: formatFrenchDate(movement.date),
+        date: movement.date,
         type: "Official",
       });
     }
@@ -290,21 +177,17 @@ function mapTransfers(entries: ApiFootballTransferEntry[]): TransferMovement[] {
   return transfers.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-/** Un club de Ligue 1 = un appel /transfers?team={id}. */
+/** Liste les clubs de Ligue 1, garde ceux des joueurs suivis, puis leurs transferts un par un. */
 async function fetchAllTransfers(): Promise<TransferMovement[]> {
-  const teams = await apiFootballFetch<ApiFootballTeamEntry>(
-    `/teams?league=${LIGUE_1_LEAGUE_ID}&season=${TEAMS_SEASON}`,
+  const teams = await apiFootballGet<ApiFootballTeam>(TEAMS_URL);
+  const trackedTeams = teams.filter(({ team }) =>
+    TRACKED_CLUBS.some((club) => normalizeText(team.name).includes(normalizeText(club))),
   );
 
-  if (teams.length === 0) {
-    throw new ApiFootballError("Aucun club de Ligue 1 renvoyé par API Football", 502);
-  }
-
-  // Séquentiel : waitForSlot() espace déjà les appels, paralléliser ne ferait
-  // que déclencher le plafond de débit.
   const entries: ApiFootballTransferEntry[] = [];
-  for (const { team } of teams) {
-    entries.push(...(await apiFootballFetch<ApiFootballTransferEntry>(`/transfers?team=${team.id}`)));
+  for (const { team } of trackedTeams) {
+    entries.push(...(await apiFootballGet<ApiFootballTransferEntry>(transferUrl(team.id))));
+    await sleep(REQUEST_DELAY_MS);
   }
 
   return mapTransfers(entries);
@@ -319,31 +202,21 @@ async function readCache(): Promise<CacheFile | null> {
   try {
     return JSON.parse(await fs.readFile(CACHE_FILE, "utf8")) as CacheFile;
   } catch {
-    return null; // Absent ou illisible : on rafraîchira.
+    return null;
   }
 }
 
 async function writeCache(transfers: TransferMovement[]): Promise<void> {
-  try {
-    await fs.mkdir(path.dirname(CACHE_FILE), { recursive: true });
-    await fs.writeFile(CACHE_FILE, JSON.stringify({ fetchedAt: Date.now(), transfers }));
-  } catch (error: unknown) {
-    // Le cache est une optimisation de quota, pas une dépendance : on continue.
-    console.warn("Cache transferts non écrit :", error instanceof Error ? error.message : error);
-  }
+  await fs.mkdir(path.dirname(CACHE_FILE), { recursive: true });
+  await fs.writeFile(CACHE_FILE, JSON.stringify({ fetchedAt: Date.now(), transfers }));
 }
 
-/**
- * Une seule construction à la fois : sans ce garde, deux onglets ouverts en même
- * temps lanceraient deux rafraîchissements et doubleraient la consommation.
- */
+/** Une seule reconstruction à la fois, pour ne pas doubler la consommation de quota. */
 let refreshInFlight: Promise<TransferMovement[]> | null = null;
-
 function refreshCache(): Promise<TransferMovement[]> {
   refreshInFlight ??= fetchAllTransfers()
     .then(async (transfers) => {
       await writeCache(transfers);
-      console.log(`Transferts Ligue 1 rafraîchis : ${transfers.length} mouvements.`);
       return transfers;
     })
     .finally(() => {
@@ -354,46 +227,33 @@ function refreshCache(): Promise<TransferMovement[]> {
 }
 
 /**
- * Tous les transferts des clubs de Ligue 1, sans filtre de date — le front
- * choisit sa fenêtre (voir frontend/components/MarketView.tsx).
- *
- * Une reconstruction complète dure plus de deux minutes à cause du plafond de
- * débit : on ne fait jamais attendre le client. Tant qu'un cache existe il est
- * servi tel quel, même périmé, et le rafraîchissement se fait en arrière-plan.
+ * GET /api/transfers — sert le cache tel quel (même périmé) et rafraîchit en
+ * arrière-plan : une reconstruction complète prend plus de deux minutes.
  */
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   if (!API_FOOTBALL_KEY) {
-    return res.status(503).json({ error: "API_FOOTBALL_KEY non configuré" });
+    res.status(503).json({ error: "API_FOOTBALL_KEY non configuré" });
+    return;
   }
 
   const cached = await readCache();
 
   if (cached) {
     if (Date.now() - cached.fetchedAt >= CACHE_TTL_MS) {
-      // Périmé : on sert quand même, et on reconstruit pour la prochaine fois.
       refreshCache().catch((error: unknown) => {
-        console.warn(
-          "Rafraîchissement des transferts impossible, cache périmé conservé :",
-          error instanceof Error ? error.message : error,
-        );
+        console.error(`Rafraîchissement transferts échoué :`, error);
       });
     }
-    return res.json({ transfers: cached.transfers });
+    res.json({ transfers: cached.transfers });
+    return;
   }
 
-  // Premier démarrage : rien à servir. On lance la construction et on demande au
-  // front de réessayer, plutôt que de tenir la requête ouverte deux minutes.
-  refreshCache().catch((error: unknown) => {
-    console.warn(
-      "Construction du cache des transferts échouée :",
-      error instanceof Error ? error.message : error,
-    );
-  });
-
-  res.status(503).json({
-    error:
-      "Transferts en cours de récupération auprès d'API Football (environ deux minutes). Réessayez dans un instant.",
-  });
+  refreshCache()
+    .then((transfers) => res.json({ transfers }))
+    .catch((error: unknown) => {
+      console.error(`Erreur sur ${req.method} ${req.originalUrl} :`, error);
+      res.status(504).json({ error: "API Football injoignable" });
+    });
 });
 
 export default router;

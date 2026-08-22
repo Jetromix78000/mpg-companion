@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { TransferMovement } from "../../shared/types";
+import { lastNameToken } from "../../shared/search";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { ClubLogo } from "./ClubLogo";
 import { ViewError, ViewLoader } from "./ViewState";
@@ -18,8 +19,6 @@ interface MarketViewProps {
 type FilterType = "Tout" | "Officiel" | "Rumeurs";
 
 const PAGE_SIZE = 20;
-const SEASON_START = "2026-06-01";
-const today = () => new Date().toISOString().slice(0, 10);
 
 export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketViewProps) {
   const dispatch = useAppDispatch();
@@ -32,22 +31,33 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
     dispatch(loadTransfers());
   }, [dispatch]);
 
-  // Fenêtre de mercato 2026 : du 1er juin à aujourd'hui.
-  const seasonTransfers = transfers.filter((t) => t.date >= SEASON_START && t.date <= today());
+  // Le back ne suit que 6 joueurs : une carte par joueur. La liste arrive triée
+  // du plus récent au plus ancien, et on privilégie le transfert dont le montant
+  // est connu — sinon la carte n'afficherait qu'un tiret. On compare le nom de
+  // famille : l'API abrège le prénom ("O. Dembélé").
+  const byPlayer = new Map<string, TransferMovement>();
+  for (const transfer of transfers) {
+    const surname = lastNameToken(transfer.playerName);
+    const kept = byPlayer.get(surname);
+    const hasAmount = transfer.amount !== "—";
 
-  // Filter transfers based on type and club connections
+    if (!kept || (hasAmount && kept.amount === "—")) byPlayer.set(surname, transfer);
+  }
+
+  const dedupedTransfers = [...byPlayer.values()].sort((a, b) => b.date.localeCompare(a.date));
+
   const getFilteredTransfers = () => {
     let list: TransferMovement[];
     switch (activeFilter) {
       case "Officiel":
-        list = seasonTransfers.filter((t) => t.type === "Official" || t.type === "Prolongation");
+        list = dedupedTransfers.filter((t) => t.type === "Official" || t.type === "Prolongation");
         break;
       case "Rumeurs":
-        list = seasonTransfers.filter((t) => t.type === "Rumor");
+        list = dedupedTransfers.filter((t) => t.type === "Rumor");
         break;
       case "Tout":
       default:
-        list = seasonTransfers;
+        list = dedupedTransfers;
         break;
     }
     return list;
