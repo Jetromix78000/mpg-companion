@@ -29,6 +29,10 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Compteurs de l'en-tête : comptés sur les données réellement reçues.
+  const countByStatus = (status: InjuryStatus) =>
+    injuries.filter((injury) => injury.status === status).length;
+
   // Un seul championnat désormais (Ligue 1) : plus de filtre par ligue, ni de
   // recherche globale d'équipe — le club et le statut suffisent.
   const filteredInjuries = useMemo(() => {
@@ -94,19 +98,25 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
             <span className="text-[10px] text-muted-text uppercase font-bold tracking-wider">
               Total Absents
             </span>
-            <span className="text-2xl font-black text-stat-decrease mt-1">124</span>
+            <span className="text-2xl font-black text-stat-decrease mt-1">
+              {countByStatus(InjuryStatus.Absent)}
+            </span>
           </div>
           <div className="bg-surface-container p-4 rounded-xl border border-white/5 flex flex-col min-w-[130px] shadow-sm">
             <span className="text-[10px] text-muted-text uppercase font-bold tracking-wider">
               Incertains
             </span>
-            <span className="text-2xl font-black text-secondary mt-1">42</span>
+            <span className="text-2xl font-black text-secondary mt-1">
+              {countByStatus(InjuryStatus.Incertain)}
+            </span>
           </div>
           <div className="bg-surface-container p-4 rounded-xl border border-white/5 flex flex-col min-w-[130px] shadow-sm">
             <span className="text-[10px] text-muted-text uppercase font-bold tracking-wider">
-              Nouveaux (Auj)
+              Suspendus
             </span>
-            <span className="text-2xl font-black text-white mt-1">8</span>
+            <span className="text-2xl font-black text-white mt-1">
+              {countByStatus(InjuryStatus.Suspendu)}
+            </span>
           </div>
         </div>
       </header>

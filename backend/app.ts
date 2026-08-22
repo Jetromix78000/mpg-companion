@@ -31,15 +31,14 @@ app.use("/api", (req, res, next) => {
 // Le reste du site reste accessible sans compte.
 app.use("/api/auth", authRouter);
 
-// Les quatre fonctionnalités data du MVP. Elles répondent aujourd'hui avec les
-// mocks de data/mock.ts, sous le contrat de réponse définitif : brancher API Football
-// ne changera que le corps des handlers (voir les TODO // Djamal dans chaque route).
+// Les quatre fonctionnalités data du MVP. Le préfixe déclaré ici décide de l'URL
+// publique : les fichiers de routes ne connaissent que des chemins relatifs.
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/transfers", transfersRouter);
 app.use("/api/players", playersRouter);
-app.use("/api/injuries", injuriesRouter);
+app.use("/api/injuries", injuriesRouter); // seule route data câblée sur API Football
 
-// Routes déjà branchées sur la vraie API Football : /football/health et /injuries.
+// Vérification de la clé API Football : GET /api/football/health.
 app.use("/api/football", footballRouter);
 
 /**
