@@ -1,7 +1,14 @@
 import dotenv from "dotenv";
+import dns from "node:dns";
 import mongoose from "mongoose";
 
 dotenv.config();
+
+// Contournement : certains réseaux (wifi d'école, box, VPN) bloquent la requête DNS
+// SRV utilisée par les URI mongodb+srv://, ce qui fait échouer la connexion avec
+// "querySrv ECONNREFUSED". On force des résolveurs publics fiables avant de se
+// connecter plutôt que de dépendre du DNS système.
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 /**
  * Connexion à MongoDB Atlas.
