@@ -14,17 +14,12 @@ interface MarketViewProps {
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }
 
-// Tous les transferts sont déjà internes à la Ligue 1 (voir backend/data/mock.ts) :
-// il ne reste que le type de mouvement à filtrer.
-type FilterType = "Tout" | "Officiel" | "Rumeurs";
-
 const PAGE_SIZE = 20;
 
 export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketViewProps) {
   const dispatch = useAppDispatch();
   const { items: transfers, loading, error } = useAppSelector((state) => state.transfers);
 
-  const [activeFilter, setActiveFilter] = useState<FilterType>("Tout");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -46,24 +41,7 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
 
   const dedupedTransfers = [...byPlayer.values()].sort((a, b) => b.date.localeCompare(a.date));
 
-  const getFilteredTransfers = () => {
-    let list: TransferMovement[];
-    switch (activeFilter) {
-      case "Officiel":
-        list = dedupedTransfers.filter((t) => t.type === "Official" || t.type === "Prolongation");
-        break;
-      case "Rumeurs":
-        list = dedupedTransfers.filter((t) => t.type === "Rumor");
-        break;
-      case "Tout":
-      default:
-        list = dedupedTransfers;
-        break;
-    }
-    return list;
-  };
-
-  const filteredTransfers = getFilteredTransfers();
+  const filteredTransfers = dedupedTransfers;
 
   const totalPages = Math.max(1, Math.ceil(filteredTransfers.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -71,12 +49,6 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
     (safePage - 1) * PAGE_SIZE,
     safePage * PAGE_SIZE,
   );
-
-  const handleFilterChange = (filter: FilterType) => {
-    setActiveFilter(filter);
-    setCurrentPage(1);
-    onShowToast(`Filtre appliqué : ${filter}`, "success");
-  };
 
   // Separate confirmed vs rumors for rendering layout headers
   const confirmedMovements = pageTransfers.filter(
@@ -104,21 +76,6 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
           <p className="text-on-surface-variant text-sm font-medium">
             Direct &amp; Rumeurs du 29 Juin 2026
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2 bg-surface-container-low p-1.5 rounded-2xl border border-white/5">
-          {(["Tout", "Officiel", "Rumeurs"] as FilterType[]).map((filter) => (
-            <button
-              key={filter}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-350 active:scale-95 ${
-                activeFilter === filter
-                  ? "bg-primary-container text-on-primary-container shadow-md"
-                  : "text-on-surface-variant hover:text-white hover:bg-white/5"
-              }`}
-              onClick={() => handleFilterChange(filter)}
-            >
-              {filter}
-            </button>
-          ))}
         </div>
       </div>
 

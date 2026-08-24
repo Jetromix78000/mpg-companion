@@ -3,33 +3,16 @@ import dotenv from "dotenv";
 import { lastNameToken, normalizeText } from "../../shared/search";
 import { InjuryStatus, type InjuryItem } from "../../shared/types";
 import { rememberPhoto } from "../photoCache";
+import { createDiskCache } from "../diskCache";
 
 dotenv.config({ quiet: true });
 
-/**
- * Centre des blessures. Monté sur "/api/injuries" dans app.ts.
- * Les chemins ici sont relatifs : `get("/")` répond à GET /api/injuries.
- */
 const injuriesRouter = Router();
-
-const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY?.trim() ?? "";
-
-/**
- * Filtres de l'endpoint /injuries. `season` est obligatoire avec `league`.
- * Tester : curl -H "x-apisports-key: VOTRE_CLE" "<url>"
- *
- *   ligue + saison   https://v3.football.api-sports.io/injuries?league=61&season=2024
- *   équipe + saison  https://v3.football.api-sports.io/injuries?team=85&season=2024
- *   joueur + saison  https://v3.football.api-sports.io/injuries?player=276&season=2024
- *   match            https://v3.football.api-sports.io/injuries?fixture=1213754
- *   date             https://v3.football.api-sports.io/injuries?date=2025-05-10
- */
+const API_FOOTBALL_MANAGER = process.env.API_FOOTBALL_MANAGER?.trim() ?? "";
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const INJURIES_URL = "https://v3.football.api-sports.io/injuries?league=61&season=2024";
 
-/**
- * Joueurs affichés, comparés sur le nom de famille normalisé.
- * L'API renvoie des noms abrégés sans accent : "O. Dembele", pas "Ousmane Dembélé".
- */
+/** Comparés sur le nom de famille normalisé. L'API renvoie des noms abrégés sans accent. */
 const TRACKED_PLAYERS = [
   "Dembele", // Paris Saint Germain
   "David", // Lille
@@ -48,7 +31,6 @@ interface ApiFootballInjury {
   team: { id: number; name: string; logo: string };
   fixture: { date: string };
 }
-
 /** Le corps JSON complet renvoyé par API Football. */
 interface ApiFootballBody {
   errors: string[] | Record<string, string>;
@@ -56,16 +38,14 @@ interface ApiFootballBody {
 }
 
 /** L'API abrège en "Initiale. Nom" : on compare le dernier mot, pas une sous-chaîne
- *  ("David Luiz" ne doit pas matcher "David"). */
+ *  ("David Luiz" ne doit pas matcher "David").
+ */
 function isTracked(apiName: string): boolean {
   const surname = lastNameToken(apiName);
   return TRACKED_PLAYERS.some((player) => normalizeText(player) === surname);
 }
 
-/**
- * Statut affichable. `player.type` ne vaut que "Missing Fixture" ou "Questionable",
- * le vrai motif est dans `player.reason` ("Muscle Injury", "Yellow Cards"...).
- */
+/** `player.type` ne vaut que "Missing Fixture"/"Questionable", le vrai motif est `player.reason`. */
 function readStatus(injury: ApiFootballInjury): InjuryStatus {
   const reason = normalizeText(injury.player.reason);
 
@@ -81,65 +61,64 @@ function formatDate(isoDate: string): string {
   return `${day}/${month}/${year}`;
 }
 
-/**
- * GET /api/injuries — une seule requête API Football, pas de mock.
- * Renvoie les joueurs de TRACKED_PLAYERS et la liste des clubs du filtre.
+interface InjuriesPayload {
+  injuries: InjuryItem[];
+  clubs: string[];
+}
+/** Logique
+ * 1. Un seul appel API Football (/injuries?league=61&season=2024), en 4 étapes :
+ * 2. Si le HTTP n'est pas 2xx, ou si `response` n'est pas un tableau (l'API a changé), on lève une exception.
+ * 3. L'API renvoie une ligne par match manqué (2460 lignes pour 400 joueurs)
+ * 4. On construit les cartes affichées côté front, limitées à MAX_RESULTS.
  */
-injuriesRouter.get("/", (req, res) => {
-  if (!API_FOOTBALL_KEY) {
-    res.status(503).json({ error: "API_FOOTBALL_KEY non configuré" });
-    return;
-  }
-
-  // GET - Récupère les blessures Ligue 1 saison 2024 chez API Football
-  fetch(INJURIES_URL, {
-    headers: { "x-apisports-key": API_FOOTBALL_KEY },
-    // Sans ça, fetch attend indéfiniment si API Football ne répond jamais.
-    signal: AbortSignal.timeout(10_000),
+function fetchInjuries(): Promise<InjuriesPayload> {
+  return fetch(INJURIES_URL, {
+    headers: { "x-apisports-key": API_FOOTBALL_MANAGER },
+    signal: AbortSignal.timeout(10_000), // Fetch attend indéfiniment si API Football ne répond pas. Ajout d'un timeout côté serveur pour protéger le front (qui n'a pas de timeout côté fetch).
   })
     .then((response) => {
-      // Sur un non-2xx (clé invalide = 403), API Football renvoie quand même du
-      // JSON : on le lit pour remonter son message plutôt qu'un code sec. Le
-      // .catch couvre le cas où le corps n'est pas du JSON (page d'erreur HTML).
+      /**
+       * Sur un non-2xx (clé invalide = 403), API Football renvoie quand même du
+       * JSON : on le lit pour remonter son message plutôt qu'un code sec.
+       * Le .catch couvre le cas où le corps n'est pas du JSON (page d'erreur HTML).
+       */
       if (!response.ok) {
         return response
           .json()
           .catch(() => null)
           .then((body: ApiFootballBody | null) => {
-            console.error(`Erreur API Football (HTTP ${response.status}) :`, body?.errors);
-            res
-              .status(response.status)
-              .json({ error: "Les données de football sont actuellement indisponibles ..." });
-            return null; // stoppe la suite : le .then d'après ne fera rien
+            throw new Error(
+              `Erreur API Football (HTTP ${response.status}) : ${JSON.stringify(body?.errors)}`,
+            );
           });
       }
 
       return response.json() as Promise<ApiFootballBody>;
     })
     .then((data) => {
-      if (!data) return; // réponse déjà envoyée juste au-dessus
+      /**
+       * L'API renvoie un JSON avec `response` et `errors`. Si `errors` est rempli, on lève une exception.
+       * Le typage n'est qu'une promesse faite à TypeScript : on vérifie la forme réelle avant de s'en servir, sinon une API qui change fait planter la boucle.
+       */
+      if (!data || typeof data !== "object") {
+        throw new Error("Réponse API Football malformée : pas d'objet JSON");
+      }
 
-      // Le typage n'est qu'une promesse faite à TypeScript : on vérifie la forme
-      // réelle avant de s'en servir, sinon une API qui change fait planter la boucle.
       if (!Array.isArray(data.response)) {
-        res.status(502).json({ error: "Les données de football sont actuellement indisponibles ..." });
-        return;
+        throw new Error("Réponse API Football malformée : `response` n'est pas un tableau");
       }
 
       // Quota dépassé ou clé invalide : l'API répond 200 avec "errors" rempli.
       const errors = data.errors ?? [];
       const errorCount = Array.isArray(errors) ? errors.length : Object.keys(errors).length;
-
       if (errorCount > 0) {
-        // Le détail (quota, compte suspendu) reste dans les logs : côté client on
-        // ne montre qu'un message lisible.
-        console.error("API Football a répondu une erreur :", errors);
-        res.status(502).json({ error: "Les données de football sont actuellement indisponibles ..." });
-        return;
+        throw new Error(`API Football a répondu une erreur : ${JSON.stringify(errors)}`);
       }
 
-      // L'API écrit une ligne par match manqué (2460 lignes pour 400 joueurs).
-      // On garde une entrée par joueur, la plus récente, et on compte les autres.
+      /**
+       * L'API renvoie une ligne par match manqué (2460 lignes pour 400 joueurs) : on ne
+       * On garde qu'une entrée par joueur suivi, la plus récente, et on compte les autres.
+       */
       const byPlayer = new Map<number, { injury: ApiFootballInjury; missedMatches: number }>();
 
       for (const injury of data.response) {
@@ -181,17 +160,47 @@ injuriesRouter.get("/", (req, res) => {
       }
 
       const shown = injuries.slice(0, MAX_RESULTS);
-
-      // Le filtre du front ne propose que les clubs réellement présents.
       const clubs = ["Tous les clubs", ...new Set(shown.map((injury) => injury.clubName))];
 
-      res.json({ injuries: shown, clubs });
-    })
-    .catch((error: unknown) => {
-      // Attrape tout ce qui casse au-dessus : réseau coupé, JSON illisible, bug du code.
-      console.error(`Erreur sur ${req.method} ${req.originalUrl} :`, error);
+      return { injuries: shown, clubs };
+    });
+}
 
-      res.status(504).json({ error: "Les données de football sont actuellement indisponibles ..." });
+const cache = createDiskCache("injuries.json", CACHE_TTL_MS, fetchInjuries);
+
+/** Logique
+ * GET /api/injuries, en 3 cas (même logique que /api/transfers) :
+ * 1. Cache absent (premier démarrage) : on attend le fetch avant de répondre.
+ * 2. Cache présent et frais (< 6h) : on le sert tel quel, aucun appel à l'API.
+ * 3. Cache présent mais périmé : on le sert quand même, et on relance un fetch en
+ * 4. Arrière-plan pour la prochaine visite — le client n'attend jamais.
+ */
+injuriesRouter.get("/", async (req, res) => {
+  if (!API_FOOTBALL_MANAGER) {
+    res.status(503).json({ error: "API_FOOTBALL_MANAGER non configuré" });
+    return;
+  }
+
+  const cached = await cache.get();
+
+  if (cached) {
+    if (cached.stale) {
+      cache.refresh().catch((error: unknown) => {
+        console.error(`Rafraîchissement blessures échoué :`, error);
+      });
+    }
+    res.json(cached.data);
+    return;
+  }
+
+  cache
+    .refresh()
+    .then((payload) => res.json(payload))
+    .catch((error: unknown) => {
+      console.error(`Erreur sur ${req.method} ${req.originalUrl} :`, error);
+      res
+        .status(504)
+        .json({ error: "Les données de football sont actuellement indisponibles ..." });
     });
 });
 

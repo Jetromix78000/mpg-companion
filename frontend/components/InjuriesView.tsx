@@ -61,12 +61,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
     });
   }, [injuries, selectedClub, activeStatusFilter, searchQuery]);
 
-  // Changer de filtre invalide la page courante : repartir en page 1 évite un
-  // tableau vide si la page active dépasse le nouveau total filtré.
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedClub, activeStatusFilter, searchQuery]);
-
   const totalPages = Math.max(1, Math.ceil(filteredInjuries.length / PAGE_SIZE));
   const paginatedInjuries = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -138,6 +132,7 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
                 value={selectedClub}
                 onChange={(e) => {
                   setSelectedClub(e.target.value);
+                  setCurrentPage(1);
                   onShowToast(`Club sélectionné : ${e.target.value}`, "success");
                 }}
               >
@@ -166,6 +161,7 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
                   }`}
                   onClick={() => {
                     setActiveStatusFilter(status);
+                    setCurrentPage(1);
                     onShowToast(`Filtre statut : ${status}`, "success");
                   }}
                 >
@@ -185,7 +181,10 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
               <input
                 className="w-full bg-surface-container-high border-none text-xs font-semibold text-white placeholder-muted-text rounded-full focus:ring-2 focus:ring-primary-container h-12 pl-11 pr-4 transition-all"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Rechercher joueur, blessure, lésion..."
                 type="text"
               />
