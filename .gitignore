@@ -11,3 +11,6 @@ CLAUDE.md
 
 # Cache disque des appels API Football (transfers.json, ...) — jamais en prod
 .cache/
+
+# Config locale Claude Code
+.claude/
