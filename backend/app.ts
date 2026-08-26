@@ -6,9 +6,9 @@ import { connectionPromise } from "./models/connection";
 import authRouter from "./routes/auth";
 import footballRouter from "./routes/football";
 import playersRouter from "./routes/players";
-import injuriesRouter from "./routes/injuries";
-import transfersRouter from "./routes/transfers";
 import dashboardRouter from "./routes/dashboard";
+import transfersRouter from "./routes/transfers";
+import injuriesRouter from "./routes/injuries";
 import favouriteRouter from "./routes/favourite";
 
 dotenv.config({ quiet: true });
@@ -33,16 +33,15 @@ app.use("/api", (req, res, next) => {
 // Le reste du site reste accessible sans compte.
 app.use("/api/auth", authRouter);
 
-// Les fonctionnalités data du MVP. dashboard/players répondent aujourd'hui avec
-// les mocks de data/mock.ts, sous le contrat de réponse définitif : brancher
-// API Football ne changera que le corps des handlers (voir les TODO // Djamal).
-app.use("/api/dashboard", dashboardRouter);
-// transfers et injuries sont déjà branchées sur la vraie API Football.
-app.use("/api/transfers", transfersRouter);
 app.use("/api/players", playersRouter);
+
+// dashboard/transfers/injuries : appelées directement par DashboardView, MarketView
+// et InjuriesView via fetch(), sans passer par Redux ni callApi.
+app.use("/api/dashboard", dashboardRouter);
+app.use("/api/transfers", transfersRouter);
 app.use("/api/injuries", injuriesRouter);
 
-// Route de contrôle : vérifie que la clé API Football fonctionne.
+// Route de contrôle : santé de la source de données et fiches statistiques détaillées.
 app.use("/api/football", footballRouter);
 
 /**

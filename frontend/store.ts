@@ -1,20 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
 import authReducer from "./reducers/auth";
-import dashboardReducer from "./reducers/dashboard";
-import injuriesReducer from "./reducers/injuries";
 import playersReducer from "./reducers/players";
-import transfersReducer from "./reducers/transfers";
 
-// Un reducer par fonctionnalité du MVP : connexion, tableau de bord, marché,
-// stats joueurs (+ recherche), blessures.
+// dashboard/transfers/injuries n'ont plus de reducer : DashboardView, MarketView
+// et InjuriesView font leur propre fetch("/api/...") en local, sans passer par Redux.
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    dashboard: dashboardReducer,
-    transfers: transfersReducer,
     players: playersReducer,
-    injuries: injuriesReducer,
   },
 });
 
