@@ -61,9 +61,13 @@ export interface TransferMovement {
   avatarUrl: string;
   fromTeam: string;
   toTeam: string;
+  /** Écussons des clubs. Optionnels : les mock data n'en portent pas. */
+  fromTeamLogo?: string;
+  toTeamLogo?: string;
   description: string;
   amount: string;
   time: string;
+  date: string; // ISO YYYY-MM-DD, pour filtrer par période côté front
   type: "Official" | "Rumor" | "Prolongation";
   confidence?: number; // 0 to 100 for rumors
   statusLabel?: string; // e.g. "Dossier très chaud", "Négociations", "Refusé", "Quasi-bouclé"

@@ -192,7 +192,7 @@ export default function DashboardView({
                   }}
                   onKeyDown={handleKeyDown}
                   onFocus={() => setShowHeroSuggestions(true)}
-                  placeholder="Rechercher un joueur (Dembélé, Hakimi, Šulc...)"
+                  placeholder="Rechercher un joueur (Dembélé, Ajorque, Lacazette...)"
                   type="text"
                   autoComplete="off"
                 />

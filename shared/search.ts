@@ -22,6 +22,12 @@ export function normalizeText(text: string): string {
     .trim();
 }
 
+/** Dernier mot d'un nom normalisé : l'API Football abrège en "Initiale. Nom". */
+export function lastNameToken(name: string): string {
+  const tokens = normalizeText(name).split(" ").filter(Boolean);
+  return tokens[tokens.length - 1] ?? "";
+}
+
 /**
  * Checks if a player matches a search query based on multiple fields.
  * Performs a smart check against normalized full name, short name, and team name.

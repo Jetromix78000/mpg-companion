@@ -4,6 +4,9 @@ import { SELECTED_PLAYERS } from "../data/selectedPlayers";
 
 const router = Router();
 
+const API_FOOTBALL_BASE_URL = "https://v3.football.api-sports.io";
+const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY?.trim() ?? "";
+
 router.get("/health", (_req, res) => {
   apiFootballFetchEnvelope<unknown[]>("/status")
     .then((envelope) => {

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Player } from "../shared/types";
 import DashboardView from "./components/DashboardView";
 import MarketView from "./components/MarketView";
@@ -26,6 +27,19 @@ import {
 
 type Tab = "dashboard" | "market" | "stats" | "injuries";
 
+/** Un onglet = une URL. La racine "/" redirige vers /dashboard. */
+const TAB_PATHS: Record<Tab, string> = {
+  dashboard: "/dashboard",
+  market: "/market",
+  stats: "/stats",
+  injuries: "/injuries",
+};
+
+function tabFromPathname(pathname: string): Tab {
+  const match = (Object.entries(TAB_PATHS) as [Tab, string][]).find(([, path]) => path === pathname);
+  return match ? match[0] : "dashboard";
+}
+
 /** Délai avant d'interroger le serveur pendant la frappe, en millisecondes. */
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -34,7 +48,18 @@ export default function App() {
   const { user, logout, requestLogin } = useAuth();
   const { selected: selectedPlayer, results } = useAppSelector((state) => state.players);
 
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab = tabFromPathname(location.pathname);
+  const setActiveTab = (tab: Tab) => navigate(TAB_PATHS[tab]);
+
+  // Racine et chemins inconnus retombent sur le dashboard, sans casser l'URL saisie.
+  useEffect(() => {
+    if (!Object.values(TAB_PATHS).includes(location.pathname)) {
+      navigate(TAB_PATHS.dashboard, { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -200,7 +225,7 @@ export default function App() {
                     setShowSearchDropdown(true);
                   }}
                   onFocus={() => setShowSearchDropdown(true)}
-                  placeholder="Rechercher un joueur (Dembélé, Hakimi, Šulc...)"
+                  placeholder="Rechercher un joueur (Dembélé, Ajorque, Lacazette...)"
                   type="text"
                   autoComplete="off"
                 />

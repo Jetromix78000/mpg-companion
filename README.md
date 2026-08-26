@@ -1,16 +1,17 @@
 # MPG Companion
 
-Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit Gazon) : tableau de bord, marché des transferts, fiches joueurs (scoutées par IA) et suivi des blessures, pour votre ligue.
+Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit Gazon) : tableau de bord, marché des transferts, fiches joueurs, suivi des blessures et authentification, limité à la Ligue 1.
 
 ## Stack technique
 
-| Domaine       | Techno                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------- |
-| Frontend      | React 19 + TypeScript, Vite, Tailwind CSS 4                                                    |
-| Backend       | Node.js + Express (mode dev : serveur API dédié port 3000 ; prod : fichiers statiques `dist/`) |
-| IA            | Google GenAI SDK (`@google/genai`, modèle Gemini) avec Google Search grounding                 |
-| Icônes / anim | lucide-react, motion                                                                           |
-| Build         | Vite (client) + esbuild (bundle serveur `server.ts` → `dist/server.cjs`)                       |
+| Domaine         | Techno                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| Frontend        | React 19 + TypeScript, Vite, Tailwind CSS 4, Redux Toolkit                                |
+| Backend         | Node.js + Express 5 (dev : `tsx backend/app.ts` en middleware Vite ; prod : sert `dist/`) |
+| Auth / DB       | MongoDB Atlas + Mongoose. Token de session `uid2`, un seul appareil connecté à la fois     |
+| Données football | API Football v3 — quota Free : 100 requêtes/jour, 10/minute, saisons 2022–2024            |
+| Icônes / anim   | lucide-react, motion                                                                       |
+| Build           | Vite (client) + esbuild (bundle serveur `backend/app.ts` → `dist/server.cjs`)              |
 
 ## Démarrage local
 
@@ -20,7 +21,9 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
    ```bash
    yarn install
    ```
-2. Renseigner les variables d'environnement dans `.env` (`GEMINI_API_KEY`, `PROJECT_URL_SUPABASE`, `SUPABASE_KEY`).
+2. Copier `.env.example` en `.env` et renseigner :
+   - `MONGODB_URI` — obligatoire, chaîne de connexion Atlas
+   - `API_FOOTBALL_MANAGER` — facultatif ; sans elle, `/api/football`, `/api/injuries` et `/api/transfers` répondent `503`
 3. Lancer frontend + backend ensemble :
 
    ```bash
@@ -44,14 +47,14 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
    ```
    En prod, un seul serveur Express sert le build statique `dist/` (plus de split de ports).
 
-Sans `GEMINI_API_KEY`, l'app reste utilisable : le backend bascule sur un générateur de joueur fictif (`generateFallbackPlayer`) pour ne jamais casser l'expérience.
+Sans `MONGODB_URI`, le serveur ne démarre pas : la connexion Mongo est attendue avant l'ouverture du port, pour éviter des erreurs d'auth obscures plutôt qu'un message clair au lancement.
 
 ## Commandes disponibles
 
 | Commande            | Effet                                                              |
-| ------------------- | ------------------------------------------------------------------ |
+| -------------------- | -------------------------------------------------------------------- |
 | `yarn dev`          | Lance frontend (Vite) et backend (Express) en parallèle            |
-| `yarn dev:api`      | Lance uniquement le serveur Express (`tsx server.ts`), port 3000   |
+| `yarn dev:api`      | Lance uniquement le serveur Express (`tsx backend/app.ts`), port 3000 |
 | `yarn dev:web`      | Lance uniquement Vite, port 3001                                   |
 | `yarn build`        | Build client (Vite) + bundle serveur (esbuild → `dist/server.cjs`) |
 | `yarn start`        | Lance le build de production (`node dist/server.cjs`)              |
@@ -67,39 +70,47 @@ Sans `GEMINI_API_KEY`, l'app reste utilisable : le backend bascule sur un géné
 
 ### 0. Schéma simplifié — flux Frontend / Backend / APIs
 
+Le frontend ne parle qu'au backend Express (`/api/*`), jamais directement à MongoDB ou API Football — toute la logique d'auth et de cache disque vit côté serveur.
+
 ![Schéma simplifié](docs/diagrams/schema-simple.png)
 
 _Diagramme Excalidraw — source éditable : [docs/diagrams/schema-simple.excalidraw](docs/diagrams/schema-simple.excalidraw)_
 
 ### 1. Architecture globale
 
+`auth.ts` parle à MongoDB ; `injuries.ts` et `transfers.ts` passent systématiquement par le cache disque (`.cache/*.json`, TTL 6h) avant d'appeler API Football — jamais d'appel direct depuis une route vers l'API externe. `dashboard.ts` et `players.ts` répondent encore avec des données mockées (TODO : brancher API Football, voir `backend/routes/*.ts`).
+
 ![Architecture globale](docs/diagrams/architecture-globale.png)
 
 _Diagramme Excalidraw — source éditable : [docs/diagrams/architecture-globale.excalidraw](docs/diagrams/architecture-globale.excalidraw)_
 
-### 2. Composants frontend et données statiques
+### 2. Composants frontend et données partagées
 
 ```mermaid
 flowchart TB
-    Types["types.ts\nPlayer, TransferMovement,\nInjuryItem, InjuryStatus"]
-    Data["data.ts\nMOCK_PLAYERS, MOCK_TRANSFERS,\nMOCK_INJURIES"]
-    Popular["popularPlayers.ts\nPOPULAR_PLAYERS (suggestions)"]
-    SearchUtil["utils/search.ts\nmatchPlayer, normalizeText"]
+    Types["shared/types.ts\nPlayer, TransferMovement,\nInjuryItem, InjuryStatus"]
+    Search["shared/search.ts\nnormalizeText, matchPlayer"]
+    Api["frontend/api.ts\ncallApi (client HTTP unique)"]
+    Store["frontend/store.ts\nReducers : auth, players,\ndashboard, transfers, injuries"]
     Avatar["components/PlayerAvatar.tsx"]
+    ClubLogo["components/ClubLogo.tsx"]
 
-    App["App.tsx"] --> Data & Popular & SearchUtil & Types
+    App["App.tsx"] --> Store & Api & Types
     Dash["DashboardView.tsx"] --> Avatar
-    Market["MarketView.tsx"] --> Avatar
+    Market["MarketView.tsx"] --> Avatar & ClubLogo
     Profile["ProfileView.tsx"] --> Avatar
-    Injuries["InjuriesView.tsx"] --> Avatar
+    Injuries["InjuriesView.tsx"] --> Avatar & ClubLogo
+    Store --> Search
 
     App -->|"onSelectPlayer\nonSearchQuery\nonShowToast"| Dash
-    App -->|"onSelectPlayer\nonShowToast"| Market
+    App -->|"onOpenPlayerByName\nonShowToast"| Market
     App -->|"player\nonShowToast"| Profile
-    App -->|"onSelectPlayer\nonShowToast"| Injuries
+    App -->|"onOpenPlayerByName\nonShowToast"| Injuries
 ```
 
 ### 3. Flux : recherche globale d'un joueur
+
+Recherche 100% locale sur les mock data (`backend/data/mock.ts`) — plus d'appel IA externe. Le débounce de 250ms évite un aller-retour serveur par caractère tapé.
 
 ![Diagramme de flux — recherche joueur](docs/diagrams/flux-recherche.png)
 
@@ -112,27 +123,18 @@ _Diagramme Excalidraw — source éditable : [docs/diagrams/flux-recherche.excal
 sequenceDiagram
     actor U as Utilisateur
     participant A as App.tsx
-    participant S as utils/search.ts
-    participant API as /api/search-player
-    participant G as Gemini API
+    participant R as reducers/players.ts
+    participant API as GET /api/players/search
 
     U->>A: saisit un nom dans la barre de recherche
-    A->>S: matchPlayer() sur MOCK_PLAYERS
-    alt Correspondance locale trouvée
-        A->>A: sélectionne le joueur mocké, onglet "stats"
-    else Correspondance équipe (ex. "Lyon", "PSG")
-        A->>A: filtre les joueurs de l'équipe, sélectionne le 1er
-    else Aucune correspondance locale
-        A->>API: GET /api/search-player?query=...
-        API->>G: prompt JSON strict + Google Search grounding
-        alt Réponse IA valide
-            G-->>API: fiche joueur JSON réelle (saison 2025/2026)
-        else Erreur / pas de clé API
-            API->>API: generateFallbackPlayer(query)
-        end
-        API-->>A: { player }
-        A->>A: sélectionne le joueur, onglet "stats"
-    end
+    A->>A: debounce 250ms
+    A->>R: dispatch(searchPlayers(query))
+    R->>API: GET /api/players/search?q=...
+    API->>API: matchPlayer() sur MOCK_PLAYERS (nom + équipe)
+    API-->>R: { players: [...] }
+    R-->>A: résultats affichés dans le dropdown
+    U->>A: clique un résultat
+    A->>A: playerSelected(), onglet "stats"
 ```
 
 </details>
@@ -141,9 +143,9 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Dashboard["Tableau de bord\n(accueil, transferts récents,\nrecherche rapide)"]
-    Market["Marché\n(mouvements de transfert :\nofficiels, rumeurs, prolongations)"]
-    Stats["Stats Joueurs\n(fiche détaillée du joueur\nsélectionné + comparaison)"]
+    Dashboard["Tableau de bord\n(accueil, dernières recherches,\nrecherche rapide)"]
+    Market["Marché\n(transferts Ligue 1,\ncâblé sur API Football)"]
+    Stats["Stats Joueurs\n(fiche détaillée du joueur\nsélectionné)"]
     Injuries["Blessures\n(statuts : Absent, Incertain,\nReprise, Suspendu)"]
 
     Dashboard <--> Market
@@ -156,42 +158,51 @@ flowchart LR
 
 ```
 mpg-companion/
+├── shared/
+│   ├── types.ts                   # Types partagés front/back (Player, TransferMovement, InjuryItem, ...)
+│   └── search.ts                  # normalizeText, matchPlayer (recherche insensible aux accents)
 ├── backend/
-│   ├── server.ts                # Entrée serveur Express (dev + prod)
-│   ├── app.ts                   # Config Express, routes, endpoint IA + compositions
-│   ├── supabase.ts              # Client Supabase (cookies, RLS)
-│   ├── middleware/               # requireAuth, rateLimit, errorHandler
-│   ├── routes/                   # auth.ts, favorites.ts
-│   ├── utils/asyncHandler.ts
-│   ├── api/index.ts              # Entrée serverless Vercel
-│   └── supabase/migrations/      # Migrations SQL
+│   ├── app.ts                     # Express, connexion Mongo, montage des routes, écoute du port
+│   ├── diskCache.ts               # Cache disque générique (TTL, verrou anti-doublon) — utilisé par transfers/injuries
+│   ├── photoCache.ts              # Cache mémoire des photos joueurs (partagé transfers ↔ injuries)
+│   ├── data/
+│   │   └── mock.ts                # Mock data Ligue 1 : MOCK_PLAYERS, MOCK_TRANSFERS, MOCK_INJURIES, LIGUE_1_CLUBS
+│   ├── models/
+│   │   ├── User.ts                # email, passwordHash, token de session
+│   │   └── connection.ts          # Connexion Mongoose (effet de bord à l'import)
+│   └── routes/
+│       ├── auth.ts                # bcrypt + gardes de session + signup/signin/session/logout
+│       ├── football.ts            # GET /health — vérifie la clé API Football
+│       ├── transfers.ts           # GET /transfers — câblé, cache disque + espacement des requêtes
+│       ├── injuries.ts            # GET /injuries — câblé, cache disque
+│       └── players.ts, dashboard.ts  # mocks en 200 — TODO brancher API Football
 ├── frontend/
-│   ├── App.tsx                   # État global, navigation, recherche, modales
-│   ├── index.tsx                 # Point d'entrée React
-│   ├── types.ts                  # Types partagés (Player, InjuryItem, ...)
-│   ├── data.ts                   # Données mockées (joueurs, transferts, blessures)
-│   ├── popularPlayers.ts         # Liste de suggestions pour l'autocomplétion
-│   ├── utils/search.ts           # Matching de joueurs (insensible aux accents)
-│   ├── auth/                     # AuthContext, LoginModal
-│   ├── favorites/                # FavoritesContext
-│   └── components/
-│       ├── DashboardView.tsx
-│       ├── MarketView.tsx
-│       ├── ProfileView.tsx
-│       ├── InjuriesView.tsx
-│       ├── FavoritesView.tsx
-│       ├── FavoriteButton.tsx
-│       └── PlayerAvatar.tsx
-├── wireframes/                  # PDFs de wireframes et UI kit
-└── dist/                        # Build de production (généré)
+│   ├── App.tsx                    # État global, navigation (react-router-dom), recherche
+│   ├── api.ts                     # callApi : client HTTP unique, utilisé par tous les reducers
+│   ├── index.tsx
+│   ├── store.ts                   # configureStore + hooks typés
+│   ├── reducers/
+│   │   ├── auth.ts                  # slice + thunks signup/signin/logout/fetchSession
+│   │   ├── players.ts               # slice + thunk searchPlayers
+│   │   ├── dashboard.ts, transfers.ts, injuries.ts  # slice + thunk load*, un par fonctionnalité
+│   ├── SessionRestorer.tsx        # relit la session au démarrage
+│   ├── auth/
+│   │   ├── useAuth.ts               # Hook au-dessus du store Redux
+│   │   └── LoginModal.tsx           # Connexion / inscription
+│   └── components/                # DashboardView, MarketView, ProfileView, InjuriesView,
+│                                   # ViewState, PlayerAvatar, ClubLogo
+├── docs/diagrams/                 # Sources .excalidraw + PNG exportés (ce README)
+└── wireframes/                    # PDFs wireframes + UI kit
 ```
 
 ## Notes d'implémentation
 
-- **Résilience recherche IA** : toute erreur (parsing JSON, API indisponible, pas de clé) retombe sur `generateFallbackPlayer`, jamais d'écran d'erreur bloquant côté utilisateur.
-- **Cache compositions** : `GET /api/compositions` scrape `ligue1.com` avec retry/backoff sur 502/503, cache 6h en mémoire, et sert une donnée périmée (`stale: true`) plutôt qu'une erreur si le site est indisponible.
-- **Recherche multi-niveaux** : nom de joueur local → nom d'équipe (mapping vers noms standardisés) → scouting IA distant, dans cet ordre de priorité pour limiter les appels API.
+- **Authentification** : email + mot de passe, bcrypt (12 tours). Le token (`uid2`, 32 octets) vit sur `User.token`, régénéré à chaque connexion — une seule session active par compte. Au logout, le champ est retiré avec `$unset` (jamais `$set null` : l'index `token` est unique+sparse, et `null` compterait comme présent).
+- **Cache disque des routes API Football** (`backend/diskCache.ts`) : `transfers.ts` et `injuries.ts` partagent la même logique générique — sert le cache tel quel (même périmé) et rafraîchit en arrière-plan, TTL 6h. Le plan Free (100 req/jour, 10/min) impose cet espacement.
+- **Marché des transferts** (`backend/routes/transfers.ts`) : `/transfers` n'accepte que `team`/`player`, jamais `league` — la route liste donc les clubs Ligue 1 suivis puis appelle `/transfers?team=` pour chacun, avec 7s d'espacement entre requêtes. Déduplication par joueur + trajet + mois.
+- **Recherche** (`frontend/reducers/players.ts`) : `GET /api/players/search?q=` compare nom et équipe (`matchPlayer` de `shared/search.ts`) sur les mock data, débattue à 250ms pendant la frappe.
+- **Token côté client** : stocké en `localStorage`, pas de cookie. Tous les appels passent par `callApi` (`frontend/api.ts`), aucun `fetch` nu dans les vues.
 
 ## Note sur cette documentation
 
-L'architecture globale et le flux de recherche sont dessinés avec le toolkit Excalidraw (`mcp-excalidraw-server`, canvas local sur `http://127.0.0.1:3005`). Les sources éditables `.excalidraw` sont versionnées dans [docs/diagrams/](docs/diagrams/) — importez-les dans le canvas (`import <fichier>.excalidraw`) pour les modifier, puis ré-exportez le PNG. Les diagrammes des composants frontend et des vues restent en Mermaid (natif dans GitHub et la plupart des visualiseurs Markdown).
+L'architecture globale et les flux sont dessinés avec le toolkit Excalidraw (`mcp-excalidraw-server`, canvas local sur `http://127.0.0.1:3005` — le port 3000 est déjà pris par le backend en dev). Les sources éditables `.excalidraw` sont versionnées dans [docs/diagrams/](docs/diagrams/) — importez-les dans le canvas (`import <fichier>.excalidraw`) pour les modifier, puis ré-exportez le PNG. Les diagrammes des composants frontend et des vues restent en Mermaid (natif dans GitHub et la plupart des visualiseurs Markdown).
