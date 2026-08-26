@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import type { Player } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { ViewError, ViewLoader } from "./ViewState";
 import { useAppDispatch, useAppSelector } from "../store";
-import { loadDashboard } from "../reducers/dashboard";
 import { resultsCleared, searchPlayers } from "../reducers/players";
 import { Search, ArrowUpRight, ChevronLeft, ChevronRight, AlertCircle, Trophy } from "lucide-react";
 import { normalizeText } from "../../shared/search";
@@ -23,7 +22,9 @@ export default function DashboardView({
   onShowToast,
 }: DashboardViewProps) {
   const dispatch = useAppDispatch();
-  const { topPlayers, loading, error } = useAppSelector((state) => state.dashboard);
+  const [topPlayers, setTopPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   // La complétion s'appuie sur GET /api/players/search, pas sur un filtrage local.
   const filteredSuggestions = useAppSelector((state) => state.players.results);
 
@@ -32,9 +33,30 @@ export default function DashboardView({
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const heroSearchRef = useRef<HTMLDivElement>(null);
 
+  // Le corps ne pose aucun setState synchrone : tout passe par le then/catch/finally
+  // de la promesse, seule forme acceptée par un effet (voir react-hooks/set-state-in-effect).
+  const loadTopPlayers = useCallback(() => {
+    fetch("/api/dashboard")
+      .then((res) => {
+        if (!res.ok) throw new Error("Chargement impossible");
+        return res.json();
+      })
+      .then((data: { topPlayers: Player[] }) => {
+        setTopPlayers(data.topPlayers);
+        setError(null);
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Chargement impossible"))
+      .finally(() => setLoading(false));
+  }, []);
+
   useEffect(() => {
-    dispatch(loadDashboard());
-  }, [dispatch]);
+    loadTopPlayers();
+  }, [loadTopPlayers]);
+
+  const retryTopPlayers = useCallback(() => {
+    setLoading(true);
+    loadTopPlayers();
+  }, [loadTopPlayers]);
 
   // Le délai évite un aller-retour par caractère frappé.
   useEffect(() => {
@@ -192,7 +214,7 @@ export default function DashboardView({
                   }}
                   onKeyDown={handleKeyDown}
                   onFocus={() => setShowHeroSuggestions(true)}
-                  placeholder="Rechercher un joueur (Dembélé, Ajorque, Lacazette...)"
+                  placeholder="Rechercher un joueur (Dembélé, David, Lacazette...)"
                   type="text"
                   autoComplete="off"
                 />
@@ -288,7 +310,7 @@ export default function DashboardView({
 
       {/* Grid Layout for Main Widgets */}
       {loading && <ViewLoader label="Chargement du tableau de bord..." />}
-      {error && <ViewError message={error} onRetry={() => dispatch(loadDashboard())} />}
+      {error && <ViewError message={error} onRetry={retryTopPlayers} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column - Latest Searches & Hot Players */}
@@ -439,19 +461,19 @@ export default function DashboardView({
                   Alerte Blessure Majeure
                 </div>
                 <h3 className="font-bold text-white text-lg tracking-tight leading-snug">
-                  Niakhaté incertain pour le prochain match
+                  Jonathan David incertain pour le prochain match
                 </h3>
                 <p className="text-on-surface-variant text-xs leading-relaxed font-medium">
-                  Les rapports du staff médical suggèrent une légère fatigue musculaire après
+                  Les rapports du staff médical suggèrent une gêne aux ischio-jambiers après
                   l'enchaînement de matchs. Probabilité de titularisation estimée à seulement{" "}
-                  <span className="text-stat-decrease font-bold text-sm">35%</span>.
+                  <span className="text-stat-decrease font-bold text-sm">64%</span>.
                 </p>
                 <div className="flex gap-2 pt-2">
                   <button
                     className="flex-1 px-4 py-2.5 bg-stat-decrease/20 text-stat-decrease hover:bg-stat-decrease/30 active:scale-95 text-xs font-bold rounded-xl transition-all border border-stat-decrease/30"
                     onClick={() =>
                       onShowToast(
-                        "Simulation de transfert out: Niakhaté placé sur la liste des ventes",
+                        "Simulation de transfert out: Jonathan David placé sur la liste des ventes",
                         "warning",
                       )
                     }
@@ -484,13 +506,13 @@ export default function DashboardView({
                 <div
                   className="flex gap-3 items-start group cursor-pointer"
                   onClick={() =>
-                    onShowToast("Analyse détaillée de Lepaul bientôt disponible", "success")
+                    onShowToast("Analyse détaillée de Lacazette bientôt disponible", "success")
                   }
                 >
                   <div className="w-2 h-2 mt-2 rounded-full bg-primary-container shadow-[0_0_8px_#00FF87] shrink-0"></div>
                   <div className="space-y-0.5">
                     <p className="text-xs text-white group-hover:text-primary-container transition-colors">
-                      La valeur d'Esteban Lepaul devrait augmenter de 15%
+                      La valeur d'Alexandre Lacazette devrait augmenter de 15%
                     </p>
                     <p className="text-[10px] text-muted-text font-semibold uppercase">
                       il y a 2 heures • Transfert rumeur

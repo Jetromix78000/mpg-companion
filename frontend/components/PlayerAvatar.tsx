@@ -26,7 +26,11 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
 
   const getProxiedUrl = (url: string) => {
     if (!url) return "";
-    if (url.includes("wikimedia.org") || url.includes("wikipedia.org")) {
+    if (
+      url.includes("wikimedia.org") ||
+      url.includes("wikipedia.org") ||
+      url.includes("transfermarkt.technology")
+    ) {
       return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=200&h=200&fit=cover&a=top`;
     }
     return url;

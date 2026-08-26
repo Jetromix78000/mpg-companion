@@ -9,7 +9,7 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
 | Frontend        | React 19 + TypeScript, Vite, Tailwind CSS 4, Redux Toolkit                                |
 | Backend         | Node.js + Express 5 (dev : `tsx backend/app.ts` en middleware Vite ; prod : sert `dist/`) |
 | Auth / DB       | MongoDB Atlas + Mongoose. Token de session `uid2`, un seul appareil connecté à la fois     |
-| Données football | API Football v3 — quota Free : 100 requêtes/jour, 10/minute, saisons 2022–2024            |
+| Données football | Mock data — un router par écran, appelé en direct par `fetch()` depuis chaque View.tsx        |
 | Icônes / anim   | lucide-react, motion                                                                       |
 | Build           | Vite (client) + esbuild (bundle serveur `backend/app.ts` → `dist/server.cjs`)              |
 
@@ -22,8 +22,8 @@ Compagnon de transferts et statistiques interactif pour manager MPG (Mon Petit G
    yarn install
    ```
 2. Copier `.env.example` en `.env` et renseigner :
-   - `MONGODB_URI` — obligatoire, chaîne de connexion Atlas
-   - `API_FOOTBALL_MANAGER` — facultatif ; sans elle, `/api/football`, `/api/injuries` et `/api/transfers` répondent `503`
+   - `MONGODB_URI` — obligatoire, chaîne de connexion Atlas. C'est la seule variable requise :
+     les routes football servent des mock data, sans clé ni quota.
 3. Lancer frontend + backend ensemble :
 
    ```bash
@@ -70,7 +70,7 @@ Sans `MONGODB_URI`, le serveur ne démarre pas : la connexion Mongo est attendue
 
 ### 0. Schéma simplifié — flux Frontend / Backend / APIs
 
-Le frontend ne parle qu'au backend Express (`/api/*`), jamais directement à MongoDB ou API Football — toute la logique d'auth et de cache disque vit côté serveur.
+Le frontend parle au backend Express (`/api/*`) pour tout : l'auth et la recherche joueurs via `callApi`, Dashboard/Marché/Blessures via un `fetch()` direct dans chaque View.tsx.
 
 ![Schéma simplifié](docs/diagrams/schema-simple.png)
 
@@ -78,7 +78,7 @@ _Diagramme Excalidraw — source éditable : [docs/diagrams/schema-simple.excali
 
 ### 1. Architecture globale
 
-`auth.ts` parle à MongoDB ; `injuries.ts` et `transfers.ts` passent systématiquement par le cache disque (`.cache/*.json`, TTL 6h) avant d'appeler API Football — jamais d'appel direct depuis une route vers l'API externe. `dashboard.ts` et `players.ts` répondent encore avec des données mockées (TODO : brancher API Football, voir `backend/routes/*.ts`).
+`auth.ts` parle à MongoDB. Chaque route data (`players.ts`, `dashboard.ts`, `transfers.ts`, `injuries.ts`, `football.ts`) répond avec le mock déclaré en tête de fichier (`MOCK_PLAYERS`, `MOCK_DASHBOARD`, `MOCK_TRANSFER`, `MOCK_INJURIES`, `MOCK_STATS`/`MOCK_FOOTBALL`) : aucun appel réseau sortant, aucune dépendance externe. `DashboardView`, `MarketView` et `InjuriesView` les appellent avec un `fetch()` direct — pas de Redux, pas de `callApi` pour ces trois-là.
 
 ![Architecture globale](docs/diagrams/architecture-globale.png)
 
@@ -110,7 +110,7 @@ flowchart TB
 
 ### 3. Flux : recherche globale d'un joueur
 
-Recherche 100% locale sur les mock data (`backend/data/mock.ts`) — plus d'appel IA externe. Le débounce de 250ms évite un aller-retour serveur par caractère tapé.
+Recherche servie par `backend/routes/players.ts` (`MOCK_PLAYERS`) — plus d'appel IA externe. Le débounce de 250ms évite un aller-retour serveur par caractère tapé.
 
 ![Diagramme de flux — recherche joueur](docs/diagrams/flux-recherche.png)
 
@@ -144,7 +144,7 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     Dashboard["Tableau de bord\n(accueil, dernières recherches,\nrecherche rapide)"]
-    Market["Marché\n(transferts Ligue 1,\ncâblé sur API Football)"]
+    Market["Marché\n(transferts Ligue 1,\nfetch simulé en local)"]
     Stats["Stats Joueurs\n(fiche détaillée du joueur\nsélectionné)"]
     Injuries["Blessures\n(statuts : Absent, Incertain,\nReprise, Suspendu)"]
 
@@ -163,28 +163,24 @@ mpg-companion/
 │   └── search.ts                  # normalizeText, matchPlayer (recherche insensible aux accents)
 ├── backend/
 │   ├── app.ts                     # Express, connexion Mongo, montage des routes, écoute du port
-│   ├── diskCache.ts               # Cache disque générique (TTL, verrou anti-doublon) — utilisé par transfers/injuries
-│   ├── photoCache.ts              # Cache mémoire des photos joueurs (partagé transfers ↔ injuries)
-│   ├── data/
-│   │   └── mock.ts                # Mock data Ligue 1 : MOCK_PLAYERS, MOCK_TRANSFERS, MOCK_INJURIES, LIGUE_1_CLUBS
 │   ├── models/
 │   │   ├── User.ts                # email, passwordHash, token de session
 │   │   └── connection.ts          # Connexion Mongoose (effet de bord à l'import)
 │   └── routes/
 │       ├── auth.ts                # bcrypt + gardes de session + signup/signin/session/logout
-│       ├── football.ts            # GET /health — vérifie la clé API Football
-│       ├── transfers.ts           # GET /transfers — câblé, cache disque + espacement des requêtes
-│       ├── injuries.ts            # GET /injuries — câblé, cache disque
-│       └── players.ts, dashboard.ts  # mocks en 200 — TODO brancher API Football
+│       ├── football.ts            # GET /health, /stats, /players — MOCK_STATS, MOCK_FOOTBALL en tête de fichier
+│       ├── players.ts             # GET /search, GET /:id — MOCK_PLAYERS en tête de fichier
+│       ├── dashboard.ts           # GET / — MOCK_DASHBOARD en tête de fichier
+│       ├── transfers.ts           # GET / — MOCK_TRANSFER en tête de fichier
+│       └── injuries.ts            # GET / — MOCK_INJURIES + MOCK_CLUBS en tête de fichier
 ├── frontend/
 │   ├── App.tsx                    # État global, navigation (react-router-dom), recherche
-│   ├── api.ts                     # callApi : client HTTP unique, utilisé par tous les reducers
+│   ├── api.ts                     # callApi : client HTTP unique, utilisé par auth et players
 │   ├── index.tsx
-│   ├── store.ts                   # configureStore + hooks typés
+│   ├── store.ts                   # configureStore + hooks typés (auth, players)
 │   ├── reducers/
 │   │   ├── auth.ts                  # slice + thunks signup/signin/logout/fetchSession
-│   │   ├── players.ts               # slice + thunk searchPlayers
-│   │   ├── dashboard.ts, transfers.ts, injuries.ts  # slice + thunk load*, un par fonctionnalité
+│   │   └── players.ts               # slice + thunk searchPlayers
 │   ├── SessionRestorer.tsx        # relit la session au démarrage
 │   ├── auth/
 │   │   ├── useAuth.ts               # Hook au-dessus du store Redux
@@ -198,8 +194,8 @@ mpg-companion/
 ## Notes d'implémentation
 
 - **Authentification** : email + mot de passe, bcrypt (12 tours). Le token (`uid2`, 32 octets) vit sur `User.token`, régénéré à chaque connexion — une seule session active par compte. Au logout, le champ est retiré avec `$unset` (jamais `$set null` : l'index `token` est unique+sparse, et `null` compterait comme présent).
-- **Cache disque des routes API Football** (`backend/diskCache.ts`) : `transfers.ts` et `injuries.ts` partagent la même logique générique — sert le cache tel quel (même périmé) et rafraîchit en arrière-plan, TTL 6h. Le plan Free (100 req/jour, 10/min) impose cet espacement.
-- **Marché des transferts** (`backend/routes/transfers.ts`) : `/transfers` n'accepte que `team`/`player`, jamais `league` — la route liste donc les clubs Ligue 1 suivis puis appelle `/transfers?team=` pour chacun, avec 7s d'espacement entre requêtes. Déduplication par joueur + trajet + mois.
+- **Fetch direct dans les View.tsx** : `DashboardView`, `MarketView` et `InjuriesView` n'ont ni reducer Redux ni module mock local — chacune fait `fetch("/api/...")` dans un `useEffect`, avec `.then((res) => res.json()).then((data) => ...)`, `useState` local pour la donnée/`loading`/`error`, et un bouton retry qui relance le même fetch. Un seul casting de trois joueurs — Dembélé (Paris Saint Germain), David (Lille), Lacazette (Lyon) — est repris à l'identique dans tous les routers, ce qui rend les écrans recoupables d'un coup d'œil. L'orthographe des clubs doit rester identique d'un fichier à l'autre.
+- **Contrat de réponse** : `{ topPlayers }`, `{ transfers }`, `{ injuries, clubs }`. `clubs` doit commencer par `"Tous les clubs"` (état initial du filtre). Côté marché, `amount: "—"` signifie « montant inconnu » et `statusLabel` doit être pris dans les libellés reconnus par `MarketView`.
 - **Recherche** (`frontend/reducers/players.ts`) : `GET /api/players/search?q=` compare nom et équipe (`matchPlayer` de `shared/search.ts`) sur les mock data, débattue à 250ms pendant la frappe.
 - **Token côté client** : stocké en `localStorage`, pas de cookie. Tous les appels passent par `callApi` (`frontend/api.ts`), aucun `fetch` nu dans les vues.
 

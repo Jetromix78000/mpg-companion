@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import type { TransferMovement } from "../../shared/types";
 import { lastNameToken } from "../../shared/search";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { ClubLogo } from "./ClubLogo";
 import { ViewError, ViewLoader } from "./ViewState";
-import { useAppDispatch, useAppSelector } from "../store";
-import { loadTransfers } from "../reducers/transfers";
 import { ArrowRight, RefreshCw, CheckCircle, TrendingUp, XCircle } from "lucide-react";
 
 interface MarketViewProps {
@@ -17,16 +15,35 @@ interface MarketViewProps {
 const PAGE_SIZE = 20;
 
 export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketViewProps) {
-  const dispatch = useAppDispatch();
-  const { items: transfers, loading, error } = useAppSelector((state) => state.transfers);
-
+  const [transfers, setTransfers] = useState<TransferMovement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    dispatch(loadTransfers());
-  }, [dispatch]);
+  const loadTransferItems = useCallback(() => {
+    fetch("/api/transfers")
+      .then((res) => {
+        if (!res.ok) throw new Error("Chargement impossible");
+        return res.json();
+      })
+      .then((data: { transfers: TransferMovement[] }) => {
+        setTransfers(data.transfers);
+        setError(null);
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Chargement impossible"))
+      .finally(() => setLoading(false));
+  }, []);
 
-  // Le back ne suit que 6 joueurs : une carte par joueur. La liste arrive triée
+  useEffect(() => {
+    loadTransferItems();
+  }, [loadTransferItems]);
+
+  const retryTransferItems = useCallback(() => {
+    setLoading(true);
+    loadTransferItems();
+  }, [loadTransferItems]);
+
+  // Le back ne suit que 3 joueurs : une carte par joueur. La liste arrive triée
   // du plus récent au plus ancien, et on privilégie le transfert dont le montant
   // est connu — sinon la carte n'afficherait qu'un tiret. On compare le nom de
   // famille : l'API abrège le prénom ("O. Dembélé").
@@ -74,13 +91,13 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
             Marché des Transferts
           </h1>
           <p className="text-on-surface-variant text-sm font-medium">
-            Direct &amp; Rumeurs du 29 Juin 2026
+            Direct &amp; Rumeurs de l'été 2026
           </p>
         </div>
       </div>
 
       {loading && <ViewLoader label="Chargement du marché des transferts..." />}
-      {error && <ViewError message={error} onRetry={() => dispatch(loadTransfers())} />}
+      {error && <ViewError message={error} onRetry={retryTransferItems} />}
 
       {/* Section: Mouvements Confirmés */}
       {confirmedMovements.length > 0 && (
