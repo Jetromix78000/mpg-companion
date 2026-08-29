@@ -60,7 +60,7 @@ async function resolveUser(req: Request): Promise<AuthenticatedUser | null> {
 }
 
 /** Refuse la requête en 401 si personne n'est authentifié. */
-async function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const user = await resolveUser(req);
 
   if (!user) {

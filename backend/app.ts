@@ -9,6 +9,7 @@ import playersRouter from "./routes/players";
 import injuriesRouter from "./routes/injuries";
 import transfersRouter from "./routes/transfers";
 import dashboardRouter from "./routes/dashboard";
+import favouriteRouter from "./routes/favourite";
 
 dotenv.config({ quiet: true });
 
@@ -18,6 +19,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const app = express();
 
 app.use(express.json({ limit: "100kb" }));
+app.use("/api/favourites", favouriteRouter);
 
 // Log minimal : une ligne par requête /api, avec le code de statut renvoyé.
 app.use("/api", (req, res, next) => {

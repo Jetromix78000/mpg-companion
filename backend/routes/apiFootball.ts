@@ -121,7 +121,7 @@ export function apiFootballFetch<T>(path: string, params: Record<string, string>
  */
 const responseCache = new Map<string, { data: unknown; expiresAt: number }>();
 let requestQueue: Promise<unknown> = Promise.resolve();
-const THROTTLE_DELAY_MS = 600;
+const THROTTLE_DELAY_MS = 7000;
 
 function apiFootballFetchThrottled<T>(
   path: string,
