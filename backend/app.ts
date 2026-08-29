@@ -40,6 +40,7 @@ app.use("/api/players", playersRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/transfers", transfersRouter);
 app.use("/api/injuries", injuriesRouter);
+app.use("/api/favorites", favouriteRouter);
 
 // Route de contrôle : santé de la source de données et fiches statistiques détaillées.
 app.use("/api/football", footballRouter);

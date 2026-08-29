@@ -2,8 +2,12 @@ import { Schema, model, type HydratedDocument, Types } from "mongoose";
 
 export interface FavoriteAttributes {
   user: Types.ObjectId;
-  /** ID API-FOOTBALL du joueur (cf. backend/data/selectedPlayers.ts). */
-  playerId: number;
+  playerId: string;
+  playerName: string;
+  playerFullName: string;
+  team: string;
+  avatarUrl?: string;
+  position: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,7 +17,12 @@ export type FavoriteDocument = HydratedDocument<FavoriteAttributes>;
 const favoriteSchema = new Schema<FavoriteAttributes>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    playerId: { type: Number, required: true },
+    playerId: { type: String, required: true },
+    playerName: { type: String, required: true },
+    playerFullName: { type: String, required: true },
+    team: { type: String, required: true },
+    avatarUrl: { type: String },
+    position: { type: String, required: true },
   },
   {
     timestamps: true,
