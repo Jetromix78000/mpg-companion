@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Player } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
+import { useAppSelector } from "../store";
+import { useAuth } from "../auth/useAuth";
 import {
   Shield,
   Bolt,
@@ -9,6 +11,7 @@ import {
   AlertTriangle,
   XCircle,
   Search,
+  Star,
 } from "lucide-react";
 
 interface ProfileViewProps {
@@ -19,7 +22,7 @@ interface ProfileViewProps {
 
 /**
  * Aucune fiche n'est chargée par défaut : les données joueur viennent désormais de
- * l'API, il faut d'abord une recherche ou un clic sur un joueur mis en avant.
+ * de MOCK DATA, il faut d'abord une recherche ou un clic sur un joueur mis en avant.
  */
 function EmptyProfile() {
   return (
@@ -49,6 +52,67 @@ function PlayerProfile({
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }) {
   const [selectedSeason, setSelectedSeason] = useState("Ligue 1 25/26");
+
+  // --- Favoris ---
+  const { user, requestLogin } = useAuth();
+  const token = useAppSelector((state) => state.auth.token);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoritePending, setFavoritePending] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/favorites", { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.json())
+      .then((data: { favorites: { playerId: string }[] }) =>
+        setIsFavorite(data.favorites.some((f) => f.playerId === player.id)),
+      )
+      .catch(() => setIsFavorite(false));
+  }, [user, token, player.id]);
+
+  // Pas de session : jamais affiché comme favori, même si l'état interne garde une vieille valeur.
+  const showAsFavorite = Boolean(user) && isFavorite;
+
+  function toggleFavorite() {
+    if (!user) {
+      requestLogin();
+      onShowToast("Connectez-vous pour ajouter un favori", "warning");
+      return;
+    }
+
+    setFavoritePending(true);
+
+    const request = showAsFavorite
+      ? fetch(`/api/favorites/${player.id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      : fetch("/api/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            playerId: player.id,
+            playerName: player.name,
+            playerFullName: player.fullName,
+            team: player.team,
+            avatarUrl: player.avatarUrl,
+            position: player.position,
+          }),
+        });
+
+    request
+      .then((res) => {
+        if (!res.ok) throw new Error("Opération impossible");
+        if (showAsFavorite) {
+          setIsFavorite(false);
+          onShowToast(`${player.name} retiré des favoris`, "success");
+        } else {
+          setIsFavorite(true);
+          onShowToast(`${player.name} ajouté aux favoris`, "success");
+        }
+      })
+      .catch(() => onShowToast("Opération impossible", "warning"))
+      .finally(() => setFavoritePending(false));
+  }
 
   // Synthèse "faut-il le titulariser en MPG ?" : croise la probabilité de titularisation,
   // la tendance des notes récentes et l'impact du remplaçant, chaque ligne citant sa source.
@@ -123,6 +187,19 @@ function PlayerProfile({
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping"></span>
                 Forme stable • {player.form}
               </span>
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                disabled={favoritePending}
+                aria-label={showAsFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors disabled:opacity-50 ${
+                  showAsFavorite
+                    ? "bg-primary-container/20 border-primary-container/40 text-primary-container"
+                    : "bg-white/5 border-white/10 text-muted-text hover:text-white"
+                }`}
+              >
+                <Star className="w-4 h-4" fill={showAsFavorite ? "currentColor" : "none"} />
+              </button>
             </div>
             <div className="flex items-center gap-2 text-on-surface-variant text-sm font-medium flex-wrap">
               <span className="text-white font-bold">{player.team}</span>

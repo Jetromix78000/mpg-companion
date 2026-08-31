@@ -5,6 +5,7 @@ import DashboardView from "./components/DashboardView";
 import MarketView from "./components/MarketView";
 import ProfileView from "./components/ProfileView";
 import InjuriesView from "./components/InjuriesView";
+import FavoriteView from "./components/FavoriteView";
 import { PlayerAvatar } from "./components/PlayerAvatar";
 import { useAuth } from "./auth/useAuth";
 import { errorMessage } from "./api";
@@ -23,9 +24,10 @@ import {
   Menu,
   LogIn,
   LogOut,
+  Star,
 } from "lucide-react";
 
-type Tab = "dashboard" | "market" | "stats" | "injuries";
+type Tab = "dashboard" | "market" | "stats" | "injuries" | "favorites";
 
 /** Un onglet = une URL. La racine "/" redirige vers /dashboard. */
 const TAB_PATHS: Record<Tab, string> = {
@@ -33,6 +35,7 @@ const TAB_PATHS: Record<Tab, string> = {
   market: "/market",
   stats: "/stats",
   injuries: "/injuries",
+  favorites: "/favorites",
 };
 
 function tabFromPathname(pathname: string): Tab {
@@ -170,6 +173,7 @@ export default function App() {
     { id: "market", label: "Marché", Icon: TrendingUp },
     { id: "stats", label: "Stats Joueurs", Icon: Award },
     { id: "injuries", label: "Blessures", Icon: Activity },
+    { id: "favorites", label: "Favoris", Icon: Star },
   ];
 
   return (
@@ -422,6 +426,8 @@ export default function App() {
           {activeTab === "injuries" && (
             <InjuriesView onOpenPlayerByName={handleGlobalSearch} onShowToast={showToast} />
           )}
+
+          {activeTab === "favorites" && <FavoriteView onOpenPlayerByName={handleGlobalSearch} />}
         </div>
       </main>
     </div>
