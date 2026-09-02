@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Player } from "../../shared/types";
+import type { Player } from "../../shared/types.js";
 
 /**
  * Mock data de la route. DashboardView l'appelle avec un vrai fetch("/api/dashboard").

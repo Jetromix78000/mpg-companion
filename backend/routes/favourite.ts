@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { requireAuth } from "./auth";
-import { Favorite, type FavoriteAttributes } from "../models/Favorite";
+import { requireAuth } from "./auth.js";
+import { Favorite, type FavoriteAttributes } from "../models/Favorite.js";
 
 const router = Router();
 

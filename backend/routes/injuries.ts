@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { InjuryStatus, type InjuryItem } from "../../shared/types";
+import { InjuryStatus, type InjuryItem } from "../../shared/types.js";
 
 /** Mock data de la route. InjuriesView l'appelle avec un vrai fetch("/api/injuries"). */
 const MOCK_INJURIES: InjuryItem[] = [

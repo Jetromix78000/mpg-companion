@@ -2,14 +2,14 @@ import path from "path";
 import dotenv from "dotenv";
 import express, { type NextFunction, type Request, type Response } from "express";
 // Import à effet de bord : ouvre la connexion MongoDB (voir models/connection.ts).
-import { connectionPromise } from "./models/connection";
-import authRouter from "./routes/auth";
-import footballRouter from "./routes/football";
-import playersRouter from "./routes/players";
-import dashboardRouter from "./routes/dashboard";
-import transfersRouter from "./routes/transfers";
-import injuriesRouter from "./routes/injuries";
-import favouriteRouter from "./routes/favourite";
+import { connectionPromise } from "./models/connection.js";
+import authRouter from "./routes/auth.js";
+import footballRouter from "./routes/football.js";
+import playersRouter from "./routes/players.js";
+import dashboardRouter from "./routes/dashboard.js";
+import transfersRouter from "./routes/transfers.js";
+import injuriesRouter from "./routes/injuries.js";
+import favouriteRouter from "./routes/favourite.js";
 
 dotenv.config({ quiet: true });
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import type { Player } from "../../shared/types";
-import { matchPlayer } from "../../shared/search";
+import type { Player } from "../../shared/types.js";
+import { matchPlayer } from "../../shared/search.js";
 
 /**
  * Mock data de la route — trois joueurs, un par club, repris à l'identique dans

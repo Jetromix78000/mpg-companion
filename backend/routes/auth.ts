@@ -7,8 +7,8 @@ import { Router } from "express";
 // compatibles, API identique.
 import bcrypt from "bcryptjs";
 import uid2 from "uid2";
-import type { UserDocument } from "../models/User";
-import { User } from "../models/User";
+import type { UserDocument } from "../models/User.js";
+import { User } from "../models/User.js";
 
 /**
  * Tout le parcours de connexion tient dans ce fichier : hachage des mots de

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { TransferMovement } from "../../shared/types";
+import type { TransferMovement } from "../../shared/types.js";
 
 /** Mock data de la route. MarketView l'appelle avec un vrai fetch("/api/transfers"). */
 const MOCK_TRANSFER: TransferMovement[] = [
