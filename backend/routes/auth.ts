@@ -1,6 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
-import bcrypt from "bcrypt";
+// bcryptjs plutôt que bcrypt : ce dernier est un module natif, et ses bindings
+// compilés ne survivent pas au bundle de la fonction serverless Vercel — le
+// require échouait au chargement de app.ts, faisant tomber *toutes* les routes,
+// y compris celles qui ne servent que du mock. Même algorithme, hashes
+// compatibles, API identique.
+import bcrypt from "bcryptjs";
 import uid2 from "uid2";
 import type { UserDocument } from "../models/User";
 import { User } from "../models/User";
