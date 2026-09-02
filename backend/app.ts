@@ -15,6 +15,10 @@ dotenv.config({ quiet: true });
 
 const PORT = Number(process.env.PORT ?? 3000);
 const isProduction = process.env.NODE_ENV === "production";
+// Vercel exécute ce fichier comme fonction serverless (@vercel/node) : pas de
+// process persistant, app.listen() n'a rien à ouvrir et le fallback statique
+// est déjà couvert par la config @vercel/static-build de vercel.json.
+const isVercel = Boolean(process.env.VERCEL);
 
 const app = express();
 
@@ -62,7 +66,7 @@ app.use("/api", (err: unknown, req: Request, res: Response, next: NextFunction) 
 
 // En dev, le frontend tourne sur Vite (port 3001, yarn dev:web) qui proxy /api ici.
 // En production, ce serveur sert aussi les fichiers construits par Vite.
-if (isProduction) {
+if (isProduction && !isVercel) {
   const distPath = path.join(process.cwd(), "dist");
   app.use(express.static(distPath));
   // Express 5 n'accepte plus le motif "*" : un app.use final couvre toutes les
@@ -74,18 +78,22 @@ if (isProduction) {
 
 // On attend MongoDB avant d'ouvrir le port : démarrer sans base ferait échouer
 // toutes les requêtes d'auth avec une erreur obscure plutôt qu'un message clair.
-connectionPromise
-  .then(() => {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+// Sur Vercel, l'export par défaut suffit : @vercel/node invoque `app` directement
+// à chaque requête, sans jamais appeler listen().
+if (!isVercel) {
+  connectionPromise
+    .then(() => {
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    })
+    .catch((error: unknown) => {
+      console.error(
+        "Démarrage impossible, MongoDB injoignable :",
+        error instanceof Error ? error.message : error,
+      );
+      process.exit(1);
     });
-  })
-  .catch((error: unknown) => {
-    console.error(
-      "Démarrage impossible, MongoDB injoignable :",
-      error instanceof Error ? error.message : error,
-    );
-    process.exit(1);
-  });
+}
 
 export default app;
