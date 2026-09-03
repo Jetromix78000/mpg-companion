@@ -6,15 +6,17 @@ const router = Router();
 
 /** GET /api/favorites — liste des favoris de l'utilisateur connecté. */
 router.get("/", requireAuth, (req, res, next) => {
-  // On lance la requête Mongo, puis on branche ce qu'il faut faire "quand la réponse arrive"
-  // avec .then(), au lieu d'attendre la valeur avec await.
+  /** Logique de style .then()
+   * On lance la requête Mongo puis on branche ce qu'il faut faire "quand
+   * la réponse arrive" avec .then(), au lieu d'attendre avec await. Le
+   * .catch(next) transmet une erreur Mongo à Express plutôt que de la
+   * perdre en promesse rejetée non gérée.
+   */
   Favorite.find({ user: req.user!.id })
     .sort({ createdAt: -1 })
     .then((favorites) => {
       res.json({ favorites });
     })
-    // Si la requête Mongo plante (ex: DB down), on transmet l'erreur à Express
-    // via next(), sinon elle serait juste perdue (promesse rejetée non gérée).
     .catch(next);
 });
 
@@ -28,14 +30,18 @@ router.post("/", requireAuth, (req, res, next) => {
     return res.status(400).json({ error: "Champs manquants" });
   }
 
+  /** Logique de l'idempotence
+   * Index unique {user, playerId} : en cas de doublon, on avale l'erreur
+   * (le .catch() ne retourne rien) pour que la chaîne .then() continue
+   * normalement. Une vraie erreur est relancée pour tomber dans le
+   * .catch(next) plus bas.
+   */
   Favorite.create({ user: req.user!.id, playerId, playerName, playerFullName, team, avatarUrl, position })
     .catch((error: unknown) => {
-      // Index unique {user, playerId} : déjà en favori, on ignore et renvoie la liste à jour.
-      // On "avale" l'erreur ici (on ne retourne rien) pour que la chaîne .then() continue normalement.
       const isDuplicate =
         error instanceof Error && "code" in error && (error as { code?: number }).code === 11000;
       if (!isDuplicate) {
-        throw error; // vraie erreur : on la relance, elle sera récupérée par le .catch(next) plus bas
+        throw error;
       }
     })
     // Qu'on vienne de créer le favori ou d'ignorer le doublon, on relit la liste à jour.

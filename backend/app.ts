@@ -9,7 +9,7 @@ import playersRouter from "./routes/players.js";
 import dashboardRouter from "./routes/dashboard.js";
 import transfersRouter from "./routes/transfers.js";
 import injuriesRouter from "./routes/injuries.js";
-import favouriteRouter from "./routes/favourite.js";
+import favoriteRouter from "./routes/favorite.js";
 
 dotenv.config({ quiet: true });
 
@@ -46,7 +46,7 @@ app.use("/api", async (_req, res, next) => {
   }
 });
 
-app.use("/api/favourites", favouriteRouter);
+app.use("/api/favourites", favoriteRouter);
 
 // Log minimal : une ligne par requête /api, avec le code de statut renvoyé.
 app.use("/api", (req, res, next) => {
@@ -67,7 +67,7 @@ app.use("/api/players", playersRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/transfers", transfersRouter);
 app.use("/api/injuries", injuriesRouter);
-app.use("/api/favorites", favouriteRouter);
+app.use("/api/favorites", favoriteRouter);
 
 // Route de contrôle : santé de la source de données et fiches statistiques détaillées.
 app.use("/api/football", footballRouter);
