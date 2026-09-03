@@ -15,23 +15,23 @@ dotenv.config({ quiet: true });
 
 const PORT = Number(process.env.PORT ?? 3000);
 const isProduction = process.env.NODE_ENV === "production";
-// Vercel exécute ce fichier comme fonction serverless (@vercel/node) : pas de
-// process persistant, app.listen() n'a rien à ouvrir et le fallback statique
-// est déjà couvert par la config @vercel/static-build de vercel.json.
+
+/** Logique du détecteur Vercel
+ * Sur Vercel, pas de process persistant : app.listen() n'a rien à ouvrir,
+ * et le fallback statique est déjà couvert par @vercel/static-build dans
+ * vercel.json.
+ */
 const isVercel = Boolean(process.env.VERCEL);
 
 const app = express();
 
 app.use(express.json({ limit: "100kb" }));
 
-/** Logique serverless : 
- * on attend la connexion MongoDB avant de traiter la requête pour express, ts et vercel
- * En serverless, contrairement au local, rien n'attend connectionPromise avant
- * qu'une requête arrive : un conteneur froid peut recevoir sa première requête
- * pendant que mongoose.connect() tourne encore. Sans ce garde, la première
- * requête Mongo de chaque cold start passe par le buffering interne de
- * mongoose, qui abandonne après 10s (bufferTimeoutMS) si la connexion à Atlas
- * n'est pas encore établie — d'où "buffering timed out after 10000ms".
+/** Logique d'attente Mongo avant chaque route
+ * En serverless, rien n'attend connectionPromise avant qu'une requête
+ * arrive. Sans ce garde, la première requête d'un conteneur froid passe
+ * par le buffering interne de mongoose et abandonne après 10s si Atlas
+ * n'a pas fini de répondre — d'où "buffering timed out after 10000ms".
  */
 app.use("/api", async (_req, res, next) => {
   try {
@@ -72,10 +72,10 @@ app.use("/api/favorites", favouriteRouter);
 // Route de contrôle : santé de la source de données et fiches statistiques détaillées.
 app.use("/api/football", footballRouter);
 
-/**
- * Filet de sécurité en fin de chaîne : renvoie du JSON aux appels /api et laisse
- * le message technique côté logs, jamais côté client.
- * Express 5 y achemine tout seul les rejets des handlers async.
+/** Logique du filet de sécurité final
+ * Renvoie du JSON aux appels /api et laisse le message technique côté
+ * logs, jamais côté client. Express 5 y achemine tout seul les rejets
+ * des handlers async.
  */
 app.use("/api", (err: unknown, req: Request, res: Response, next: NextFunction) => {
   if (res.headersSent) return next(err);
@@ -87,22 +87,25 @@ app.use("/api", (err: unknown, req: Request, res: Response, next: NextFunction) 
   res.status(500).json({ error: "Erreur serveur" });
 });
 
-// En dev, le frontend tourne sur Vite (port 3001, yarn dev:web) qui proxy /api ici.
-// En production, ce serveur sert aussi les fichiers construits par Vite.
+/** Logique du fallback statique
+ * En dev, Vite (port 3001) proxy /api ici. En prod hors Vercel, ce
+ * serveur sert aussi les fichiers construits par Vite, avec un fallback
+ * SPA — Express 5 n'accepte plus le motif "*".
+ */
 if (isProduction && !isVercel) {
   const distPath = path.join(process.cwd(), "dist");
   app.use(express.static(distPath));
-  // Express 5 n'accepte plus le motif "*" : un app.use final couvre toutes les
-  // routes non servies par les assets statiques (fallback SPA).
   app.use((_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
 
-// On attend MongoDB avant d'ouvrir le port : démarrer sans base ferait échouer
-// toutes les requêtes d'auth avec une erreur obscure plutôt qu'un message clair.
-// Sur Vercel, l'export par défaut suffit : @vercel/node invoque `app` directement
-// à chaque requête, sans jamais appeler listen().
+/** Logique du démarrage local
+ * On attend MongoDB avant d'ouvrir le port : démarrer sans base ferait
+ * échouer toutes les requêtes d'auth avec une erreur obscure. Sur
+ * Vercel, l'export par défaut suffit : @vercel/node invoque `app`
+ * directement à chaque requête, sans jamais appeler listen().
+ */
 if (!isVercel) {
   connectionPromise
     .then(() => {

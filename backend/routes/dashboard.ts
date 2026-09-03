@@ -1,9 +1,9 @@
 import { Router } from "express";
 import type { Player } from "../../shared/types.js";
 
-/**
- * Mock data de la route. DashboardView l'appelle avec un vrai fetch("/api/dashboard").
- * À garder synchrone avec backend/routes/players.ts (mêmes joueurs).
+/** Logique du mock data
+ * DashboardView l'appelle avec un vrai fetch("/api/dashboard"). À garder
+ * synchrone avec backend/routes/players.ts (mêmes joueurs).
  */
 const MOCK_DASHBOARD: Player[] = [
   {
@@ -351,11 +351,10 @@ const MOCK_DASHBOARD: Player[] = [
 
 const router = Router();
 
-/**
- * Joueurs mis en avant sur le tableau de bord.
- * "Cache-Control: no-cache" force le navigateur à revalider à chaque appel plutôt
- * que servir sa copie sans requête : Express calcule un ETag sur le corps et répond
- * 304 tant que le corps ne change pas.
+/** Logique de la route
+ * Joueurs mis en avant sur le tableau de bord. "Cache-Control: no-cache"
+ * force le navigateur à revalider à chaque appel : Express calcule un
+ * ETag et répond 304 tant que le corps ne change pas.
  */
 router.get("/", (_req, res) => {
   res.set("Cache-Control", "no-cache");

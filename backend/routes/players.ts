@@ -2,17 +2,11 @@ import { Router } from "express";
 import type { Player } from "../../shared/types.js";
 import { matchPlayer } from "../../shared/search.js";
 
-/**
- * Mock data de la route — trois joueurs, un par club, repris à l'identique dans
- * dashboard.ts, transfers.ts, injuries.ts et football.ts. Ce casting réduit
- * permet de recouper d'un coup d'œil ce qu'affiche chaque écran.
- *
- * Les objets sont volontairement COMPLETS : ProfileView lit tous les champs
- * imbriqués (recentNotes, lastMatches, comparison.stats, styleTags) et la fiche
- * casse si l'un d'eux manque. maxVal doit rester non nul (largeur des barres).
- *
- * L'orthographe des clubs doit rester identique dans les cinq routes, sinon le
- * filtre par club des blessures et le recoupement entre pages tombent à côté.
+/** Logique du mock data
+ * Trois joueurs, un par club, repris à l'identique dans dashboard.ts,
+ * transfers.ts, injuries.ts et football.ts. Objets volontairement
+ * COMPLETS (ProfileView lit tous les champs imbriqués) et orthographe
+ * des clubs identique dans les cinq routes — sinon les filtres cassent.
  */
 const MOCK_PLAYERS: Player[] = [
   {
@@ -360,14 +354,10 @@ const MOCK_PLAYERS: Player[] = [
 
 const router = Router();
 
-/**
- * /search doit rester déclarée AVANT /:id, sinon "search" est pris pour un identifiant.
- */
-
-/**
- * "Cache-Control: no-cache" : Express calcule un ETag sur le corps (activé par
- * défaut) et répond 304 tant que le résultat n'a pas changé, 200 sinon — comme
- * une vraie API. Chaque `q`/`id` est une URL distincte, donc son propre cache.
+/** Logique de l'ordre des routes
+ * /search doit rester déclarée AVANT /:id, sinon "search" est pris pour
+ * un identifiant. Cache-Control: no-cache sur les deux : Express calcule
+ * un ETag et répond 304 tant que le résultat n'a pas changé.
  */
 
 /** Recherche par nom de joueur ou d'équipe (matchPlayer compare les deux). */

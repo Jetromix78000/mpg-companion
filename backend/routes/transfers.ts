@@ -135,9 +135,10 @@ const MOCK_TRANSFER: TransferMovement[] = [
 
 const router = Router();
 
-/**
- * Marché des transferts. Le filtrage par période vit côté front (MarketView).
- * Revalidation à chaque appel : 304 tant que l'ETag n'a pas changé.
+/** Logique de la route
+ * Marché des transferts. Le filtrage par période vit côté front
+ * (MarketView). Revalidation à chaque appel : 304 tant que l'ETag n'a
+ * pas changé.
  */
 router.get("/", (_req, res) => {
   res.set("Cache-Control", "no-cache");

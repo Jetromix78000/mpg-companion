@@ -10,9 +10,9 @@ import uid2 from "uid2";
 import type { UserDocument } from "../models/User.js";
 import { User } from "../models/User.js";
 
-/**
- * Tout le parcours de connexion tient dans ce fichier : hachage des mots de
- * passe, gardes de session et routes signup/signin/me/logout. Rien de tout ça
+/** Logique du fichier
+ * Tout le parcours de connexion tient ici : hachage des mots de passe,
+ * gardes de session et routes signup/signin/me/logout. Rien de tout ça
  * n'est utilisé ailleurs dans le serveur, un seul fichier suffit.
  */
 
@@ -49,10 +49,10 @@ declare global {
   }
 }
 
-/**
- * Résout l'utilisateur porté par l'en-tête `Authorization: Bearer <token>`.
- * Le token vit sur le document User : le logout le vide, ce qui suffit à le rendre
- * inutilisable. Renvoie null si l'en-tête manque ou si aucun compte ne correspond.
+/** Logique de résolution du token
+ * Résout l'utilisateur porté par `Authorization: Bearer <token>`. Le token
+ * vit sur User : le logout le vide, ce qui suffit à le rendre inutilisable.
+ * Renvoie null si l'en-tête manque ou si aucun compte ne correspond.
  */
 async function resolveUser(req: Request): Promise<AuthenticatedUser | null> {
   const [scheme, token] = (req.headers.authorization ?? "").split(" ");
@@ -76,9 +76,10 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   next();
 }
 
-/**
- * Attache l'utilisateur s'il y en a un, laisse passer sinon.
- * Utilisé par GET /api/auth/session, qui répond 200 avec user:null pour un visiteur anonyme.
+/** Logique de la session anonyme
+ * Attache l'utilisateur s'il y en a un, laisse passer sinon. Utilisé par
+ * GET /api/auth/session, qui répond 200 avec user:null pour un visiteur
+ * anonyme plutôt que 401.
  */
 async function attachUser(req: Request, _res: Response, next: NextFunction) {
   req.user = (await resolveUser(req)) ?? undefined;
@@ -174,8 +175,8 @@ router.get("/session", attachUser, (req, res) => {
   res.json({ user: req.user ?? null });
 });
 
-/**
- * Déconnexion : vider le token du compte suffit à le rendre inutilisable.
+/** Logique du logout
+ * Vider le token du compte suffit à le rendre inutilisable.
  */
 router.post("/logout", requireAuth, async (req, res) => {
   await User.updateOne({ _id: req.user!.id }, { $unset: { token: "" } });

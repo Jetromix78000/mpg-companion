@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-/**
+/** Logique du contrat de la fiche
  * Contrat de la fiche statistique détaillée, autrefois construit à partir
  * d'API Football. Conservé tel quel : la forme de réponse ne change pas.
  */
@@ -47,11 +47,10 @@ interface PlayerFootballStats {
 
 const SEASON = 2026;
 
-/**
- * Mock data de la route — les trois mêmes joueurs que players.ts, dashboard.ts,
- * transfers.ts et injuries.ts. Ici sous forme numérique : `id` est l'identifiant
- * utilisé par /stats?playerId=, distinct des identifiants texte de players.ts
- * ("dembele", "david", "lacazette").
+/** Logique du mock data
+ * Les trois mêmes joueurs que players.ts, dashboard.ts, transfers.ts et
+ * injuries.ts, sous forme numérique : `id` est l'identifiant utilisé par
+ * /stats?playerId=, distinct des identifiants texte ("dembele", "david").
  */
 const MOCK_FOOTBALL = [
   { id: 153, name: "Ousmane Dembélé", team: "Paris Saint Germain" },
@@ -334,11 +333,10 @@ const MOCK_STATS: Record<number, PlayerFootballStats> = {
 
 const router = Router();
 
-/**
- * "Cache-Control: no-cache" sur chaque route GET : Express calcule un ETag sur le
- * corps (activé par défaut) et répond 304 tant que le mock n'a pas changé, 200
- * sinon — comme une vraie API. Le tout premier appel n'a pas d'ETag côté client,
- * donc reste 200. Non appliqué aux branches d'erreur (400) : rien à revalider.
+/** Logique du cache HTTP
+ * "Cache-Control: no-cache" sur chaque GET : Express calcule un ETag et
+ * répond 304 tant que le mock n'a pas changé, 200 sinon — comme une vraie
+ * API. Non appliqué aux branches d'erreur (400) : rien à revalider.
  */
 
 /** Contrôle de vie de la source de données. Plus de clé ni d'appel externe. */

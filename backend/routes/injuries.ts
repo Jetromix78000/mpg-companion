@@ -119,9 +119,10 @@ const MOCK_CLUBS: string[] = [
 
 const router = Router();
 
-/**
- * Centre des blessures : les blessures et la liste de clubs qui alimente le filtre.
- * Revalidation à chaque appel : 304 tant que l'ETag n'a pas changé.
+/** Logique de la route
+ * Centre des blessures : les blessures et la liste de clubs qui alimente
+ * le filtre. Revalidation à chaque appel : 304 tant que l'ETag n'a pas
+ * changé.
  */
 router.get("/", (_req, res) => {
   res.set("Cache-Control", "no-cache");
