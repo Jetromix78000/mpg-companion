@@ -23,6 +23,29 @@ const isVercel = Boolean(process.env.VERCEL);
 const app = express();
 
 app.use(express.json({ limit: "100kb" }));
+
+/** Logique serverless : 
+ * on attend la connexion MongoDB avant de traiter la requête pour express, ts et vercel
+ * En serverless, contrairement au local, rien n'attend connectionPromise avant
+ * qu'une requête arrive : un conteneur froid peut recevoir sa première requête
+ * pendant que mongoose.connect() tourne encore. Sans ce garde, la première
+ * requête Mongo de chaque cold start passe par le buffering interne de
+ * mongoose, qui abandonne après 10s (bufferTimeoutMS) si la connexion à Atlas
+ * n'est pas encore établie — d'où "buffering timed out after 10000ms".
+ */
+app.use("/api", async (_req, res, next) => {
+  try {
+    await connectionPromise;
+    next();
+  } catch (error: unknown) {
+    console.error(
+      "MongoDB injoignable, requête refusée :",
+      error instanceof Error ? error.message : error,
+    );
+    res.status(503).json({ error: "Base de données indisponible" });
+  }
+});
+
 app.use("/api/favourites", favouriteRouter);
 
 // Log minimal : une ligne par requête /api, avec le code de statut renvoyé.
