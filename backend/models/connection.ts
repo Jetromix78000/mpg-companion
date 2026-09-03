@@ -26,6 +26,21 @@ export const connectionPromise = mongoUri
     })
   : Promise.reject(new Error("MONGODB_URI manquante"));
 
+/**
+ * Décrit l'URI sans jamais révéler le mot de passe : schéma, hôte et base.
+ * Une connexion qui échoue alors qu'elle marche en local vient presque toujours
+ * d'une valeur mal recopiée dans l'environnement distant — guillemets collés,
+ * hôte mal orthographié, chaîne tronquée. Le message d'Atlas ("Could not connect
+ * to any servers") reste identique dans tous ces cas et n'aide pas à trancher.
+ */
+function describeUri(uri: string | undefined): string {
+  if (!uri) return "URI absente";
+  const match = /^(mongodb(?:\+srv)?):\/\/[^@]*@([^/?]+)(\/[^?]*)?/.exec(uri);
+  if (!match) return `URI non reconnue (longueur ${uri.length}, début ${JSON.stringify(uri.slice(0, 12))})`;
+  const [, scheme, host, database] = match;
+  return `${scheme}://…@${host}${database ?? " (aucune base)"}`;
+}
+
 // Sans ce catch, le rejet de la promesse ci-dessus reste non géré quand personne
 // ne l'attend (cas Vercel : plus de bloc listen()), et Node coupe le process.
 connectionPromise.catch((error: unknown) => {
@@ -33,6 +48,7 @@ connectionPromise.catch((error: unknown) => {
     "MongoDB injoignable :",
     error instanceof Error ? error.message : error,
   );
+  console.error("URI utilisée :", describeUri(mongoUri));
 });
 
 export default mongoose;
