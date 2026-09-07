@@ -1,16 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useAuth } from "../auth/useAuth";
-import { useAppSelector } from "../store";
+import { useFavorites } from "../auth/useFavorites";
 import { PlayerAvatar } from "./PlayerAvatar";
-
-interface FavoritePlayer {
-  playerId: string;
-  playerName: string;
-  playerFullName: string;
-  team: string;
-  avatarUrl?: string;
-  position: string;
-}
 
 interface FavoriteViewProps {
   onOpenPlayerByName: (query: string) => void;
@@ -18,20 +9,7 @@ interface FavoriteViewProps {
 
 const FavoriteView: React.FC<FavoriteViewProps> = ({ onOpenPlayerByName }) => {
   const { user } = useAuth();
-  const token = useAppSelector((state) => state.auth.token);
-  const [favorites, setFavorites] = useState<FavoritePlayer[]>([]);
-
-  /**
-   * L'utilisateur connecté ouvre cette section.
-   * Sa liste de favoris se charge depuis le serveur.
-   */
-  useEffect(() => {
-    if (!user) return;
-    fetch("/api/favorites", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.json())
-      .then((data: { favorites: FavoritePlayer[] }) => setFavorites(data.favorites))
-      .catch(() => setFavorites([]));
-  }, [user, token]);
+  const { favorites } = useFavorites();
 
   if (!user) return null;
 

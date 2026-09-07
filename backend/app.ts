@@ -43,8 +43,6 @@ app.use("/api", async (_req, res, next) => {
   }
 });
 
-app.use("/api/favourites", favoriteRouter);
-
 // Log minimal : une ligne par requête /api, avec le code de statut renvoyé.
 app.use("/api", (req, res, next) => {
   res.on("finish", () => {

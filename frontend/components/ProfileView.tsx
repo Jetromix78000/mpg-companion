@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Player } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
-import { useAppSelector } from "../store";
 import { useAuth } from "../auth/useAuth";
+import { useFavorites } from "../auth/useFavorites";
 import {
   Shield,
   Bolt,
@@ -57,25 +57,10 @@ function PlayerProfile({
   const [selectedSeason, setSelectedSeason] = useState("Ligue 1 25/26");
 
   const { user, requestLogin } = useAuth();
-  const token = useAppSelector((state) => state.auth.token);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite, toggleFavorite: toggleFavoriteRequest } = useFavorites();
   const [favoritePending, setFavoritePending] = useState(false);
 
-  /**
-   * L'utilisateur connecté ouvre la fiche d'un joueur.
-   * Son statut favori pour ce joueur est vérifié auprès du serveur.
-   */
-  useEffect(() => {
-    if (!user) return;
-    fetch("/api/favorites", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.json())
-      .then((data: { favorites: { playerId: string }[] }) =>
-        setIsFavorite(data.favorites.some((f) => f.playerId === player.id)),
-      )
-      .catch(() => setIsFavorite(false));
-  }, [user, token, player.id]);
-
-  const showAsFavorite = Boolean(user) && isFavorite;
+  const showAsFavorite = Boolean(user) && isFavorite(player.id);
 
   /**
    * L'utilisateur clique l'étoile sur la fiche d'un joueur.
@@ -90,34 +75,14 @@ function PlayerProfile({
 
     setFavoritePending(true);
 
-    const request = showAsFavorite
-      ? fetch(`/api/favorites/${player.id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        })
-      : fetch("/api/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            playerId: player.id,
-            playerName: player.name,
-            playerFullName: player.fullName,
-            team: player.team,
-            avatarUrl: player.avatarUrl,
-            position: player.position,
-          }),
-        });
-
-    request
-      .then((res) => {
-        if (!res.ok) throw new Error("Opération impossible");
-        if (showAsFavorite) {
-          setIsFavorite(false);
-          onShowToast(`${player.name} retiré des favoris`, "success");
-        } else {
-          setIsFavorite(true);
-          onShowToast(`${player.name} ajouté aux favoris`, "success");
-        }
+    toggleFavoriteRequest(player)
+      .then(() => {
+        onShowToast(
+          showAsFavorite
+            ? `${player.name} retiré des favoris`
+            : `${player.name} ajouté aux favoris`,
+          "success",
+        );
       })
       .catch(() => onShowToast("Opération impossible", "warning"))
       .finally(() => setFavoritePending(false));

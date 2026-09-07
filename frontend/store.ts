@@ -9,8 +9,8 @@ import playersReducer from "./reducers/players";
  */
 export const store = configureStore({
   reducer: {
-    auth: authReducer,
-    players: playersReducer,
+    auth: authReducer, // gère l'état de l'utilisateur connecté (token, infos, etc.) soit l'authentification
+    players: playersReducer, // gère l'état des joueurs (liste, détails, etc.) soit les données liées aux joueurs
   },
 });
 
