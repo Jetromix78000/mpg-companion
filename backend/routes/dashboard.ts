@@ -1,9 +1,9 @@
 import { Router } from "express";
 import type { Player } from "../../shared/types.js";
 
-/** Logique du mock data
- * DashboardView l'appelle avec un vrai fetch("/api/dashboard"). À garder
- * synchrone avec backend/routes/players.ts (mêmes joueurs).
+/**
+ * L'utilisateur ouvre le tableau de bord.
+ * Les joueurs mis en avant s'affichent.
  */
 const MOCK_DASHBOARD: Player[] = [
   {
@@ -351,10 +351,9 @@ const MOCK_DASHBOARD: Player[] = [
 
 const router = Router();
 
-/** Logique de la route
- * Joueurs mis en avant sur le tableau de bord. "Cache-Control: no-cache"
- * force le navigateur à revalider à chaque appel : Express calcule un
- * ETag et répond 304 tant que le corps ne change pas.
+/**
+ * L'utilisateur charge la page tableau de bord.
+ * La liste des joueurs en vedette est renvoyée.
  */
 router.get("/", (_req, res) => {
   res.set("Cache-Control", "no-cache");

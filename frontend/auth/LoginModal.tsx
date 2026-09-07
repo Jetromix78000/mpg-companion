@@ -9,11 +9,8 @@ const MIN_PASSWORD_LENGTH = 8;
 type Mode = "login" | "signup";
 
 /**
- * Modale de connexion, ouverte uniquement quand une action l'exige (suivre un joueur).
- * La navigation du site reste accessible sans compte.
- *
- * signup et signin font leur fetch directement ici, sans thunk intermédiaire :
- * on lit la réponse, on pose le token, puis on dispatch sessionStarted().
+ * L'utilisateur tente une action qui exige un compte (ex. suivre un joueur).
+ * La modale de connexion s'ouvre, sans bloquer le reste du site.
  */
 export function LoginModal() {
   const dispatch = useAppDispatch();
@@ -25,10 +22,10 @@ export function LoginModal() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // La modale reste montée en permanence : sans ce reset, le mot de passe saisi
-  // resterait en mémoire et serait réaffiché à la prochaine ouverture. Ajustement
-  // pendant le rendu plutôt qu'un effet : c'est le remède recommandé par React
-  // pour "réinitialiser un state quand une prop change".
+  /**
+   * L'utilisateur ferme la modale de connexion.
+   * Email, mot de passe et erreur sont réinitialisés pour la prochaine ouverture.
+   */
   const [wasOpen, setWasOpen] = useState(isLoginOpen);
   if (isLoginOpen !== wasOpen) {
     setWasOpen(isLoginOpen);

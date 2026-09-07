@@ -15,14 +15,17 @@ import {
 } from "lucide-react";
 
 interface ProfileViewProps {
-  /** null tant qu'aucune recherche n'a abouti : la fiche n'a plus de joueur par défaut. */
+  /**
+   * L'utilisateur ouvre l'onglet Stats sans avoir sélectionné de joueur.
+   * player reste null, un écran vide s'affiche à la place d'une fiche.
+   */
   player: Player | null;
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }
 
 /**
- * Aucune fiche n'est chargée par défaut : les données joueur viennent désormais de
- * de MOCK DATA, il faut d'abord une recherche ou un clic sur un joueur mis en avant.
+ * L'utilisateur ouvre l'onglet Stats sans avoir cherché de joueur.
+ * Cet écran l'invite à chercher ou cliquer un joueur d'abord.
  */
 function EmptyProfile() {
   return (
@@ -53,12 +56,15 @@ function PlayerProfile({
 }) {
   const [selectedSeason, setSelectedSeason] = useState("Ligue 1 25/26");
 
-  // --- Favoris ---
   const { user, requestLogin } = useAuth();
   const token = useAppSelector((state) => state.auth.token);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoritePending, setFavoritePending] = useState(false);
 
+  /**
+   * L'utilisateur connecté ouvre la fiche d'un joueur.
+   * Son statut favori pour ce joueur est vérifié auprès du serveur.
+   */
   useEffect(() => {
     if (!user) return;
     fetch("/api/favorites", { headers: { Authorization: `Bearer ${token}` } })
@@ -69,9 +75,12 @@ function PlayerProfile({
       .catch(() => setIsFavorite(false));
   }, [user, token, player.id]);
 
-  // Pas de session : jamais affiché comme favori, même si l'état interne garde une vieille valeur.
   const showAsFavorite = Boolean(user) && isFavorite;
 
+  /**
+   * L'utilisateur clique l'étoile sur la fiche d'un joueur.
+   * Le joueur est ajouté ou retiré de ses favoris.
+   */
   function toggleFavorite() {
     if (!user) {
       requestLogin();
@@ -114,8 +123,10 @@ function PlayerProfile({
       .finally(() => setFavoritePending(false));
   }
 
-  // Synthèse "faut-il le titulariser en MPG ?" : croise la probabilité de titularisation,
-  // la tendance des notes récentes et l'impact du remplaçant, chaque ligne citant sa source.
+  /**
+   * L'utilisateur consulte la fiche d'un joueur.
+   * Une recommandation "titulariser ou non" se calcule à partir de ses stats.
+   */
   const startRecommendation = (() => {
     type Tone = "good" | "neutral" | "bad";
     const reasons: { tone: Tone; text: string }[] = [];
@@ -163,7 +174,6 @@ function PlayerProfile({
 
   return (
     <div className="space-y-6 animate-fadeIn" id="player-profile-panel">
-      {/* Header Joueur */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-2">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -213,14 +223,12 @@ function PlayerProfile({
       </div>
 
       <div className="max-w-3xl mx-auto w-full space-y-6">
-        {/* 1. Index de Forme */}
         <div className="glass-card p-5 rounded-2xl border border-white/5 shadow-xl space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-text">
             Index de Forme
           </h3>
           <div className="flex items-center justify-between gap-2">
             <div className="relative flex items-center justify-center w-24 h-24">
-              {/* SVG Radial Progress */}
               <svg className="w-full h-full transform -rotate-90">
                 <circle
                   cx="48"
@@ -259,7 +267,6 @@ function PlayerProfile({
                   vs sem. dernière
                 </p>
               </div>
-              {/* Simulated Sparkline Bar chart */}
               <div className="flex items-end gap-1.5 h-10 pt-1">
                 {player.recentNotes.map((val, idx) => (
                   <div
@@ -274,7 +281,6 @@ function PlayerProfile({
           </div>
         </div>
 
-        {/* 2. Probabilité de Jouer */}
         <div className="glass-card p-5 rounded-2xl border border-white/5 border-l-4 border-l-primary-container shadow-xl space-y-4">
           <div className="flex justify-between items-start">
             <div>
@@ -301,7 +307,6 @@ function PlayerProfile({
           </div>
         </div>
 
-        {/* 3. Statistiques de Temps de Jeu */}
         <div className="glass-card p-5 rounded-2xl border border-white/5 shadow-xl space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-4">
             <h3 className="text-lg font-bold font-title-lg text-white flex items-center gap-2">
@@ -344,7 +349,6 @@ function PlayerProfile({
           </div>
         </div>
 
-        {/* Derniers Matchs */}
         <div className="glass-card p-5 rounded-2xl border border-white/5 shadow-xl space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-text">
             Derniers Matchs Enregistrés
@@ -399,7 +403,6 @@ function PlayerProfile({
           </div>
         </div>
 
-        {/* Comparaison Remplaçant */}
         <div className="glass-card p-5 rounded-2xl border border-white/5 shadow-xl space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-text">
             Comparaison Remplaçant Probable
@@ -430,7 +433,6 @@ function PlayerProfile({
                     </span>
                     <span className="text-stat-decrease font-mono">{st.altVal}</span>
                   </div>
-                  {/* Double horizontal comparison progress bar */}
                   <div className="flex h-2 bg-white/5 rounded-full overflow-hidden">
                     <div
                       className="bg-primary-container rounded-l-full"
@@ -471,7 +473,6 @@ function PlayerProfile({
           </div>
         </div>
 
-        {/* 4. Faut-il le titulariser en MPG ? */}
         <div
           className={`glass-card p-5 rounded-2xl border shadow-xl space-y-4 border-l-4 ${
             startRecommendation.verdict === "conseille"

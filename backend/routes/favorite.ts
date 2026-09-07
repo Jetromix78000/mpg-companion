@@ -4,14 +4,11 @@ import { Favorite, type FavoriteAttributes } from "../models/Favorite.js";
 
 const router = Router();
 
-/** GET /api/favorites — liste des favoris de l'utilisateur connecté. */
+/**
+ * L'utilisateur ouvre sa page de profil.
+ * La liste de ses joueurs favoris s'affiche.
+ */
 router.get("/", requireAuth, (req, res, next) => {
-  /** Logique de style .then()
-   * On lance la requête Mongo puis on branche ce qu'il faut faire "quand
-   * la réponse arrive" avec .then(), au lieu d'attendre avec await. Le
-   * .catch(next) transmet une erreur Mongo à Express plutôt que de la
-   * perdre en promesse rejetée non gérée.
-   */
   Favorite.find({ user: req.user!.id })
     .sort({ createdAt: -1 })
     .then((favorites) => {
@@ -20,7 +17,10 @@ router.get("/", requireAuth, (req, res, next) => {
     .catch(next);
 });
 
-/** POST /api/favorites — ajoute un joueur aux favoris. Idempotent si déjà présent. */
+/**
+ * L'utilisateur clique sur l'étoile d'un joueur pour l'ajouter en favori.
+ * Le joueur rejoint sa liste, sans doublon si déjà présent.
+ */
 router.post("/", requireAuth, (req, res, next) => {
   const { playerId, playerName, playerFullName, team, avatarUrl, position } = req.body as Partial<
     FavoriteAttributes
@@ -30,12 +30,6 @@ router.post("/", requireAuth, (req, res, next) => {
     return res.status(400).json({ error: "Champs manquants" });
   }
 
-  /** Logique de l'idempotence
-   * Index unique {user, playerId} : en cas de doublon, on avale l'erreur
-   * (le .catch() ne retourne rien) pour que la chaîne .then() continue
-   * normalement. Une vraie erreur est relancée pour tomber dans le
-   * .catch(next) plus bas.
-   */
   Favorite.create({ user: req.user!.id, playerId, playerName, playerFullName, team, avatarUrl, position })
     .catch((error: unknown) => {
       const isDuplicate =
@@ -52,7 +46,10 @@ router.post("/", requireAuth, (req, res, next) => {
     .catch(next);
 });
 
-/** DELETE /api/favorites/:playerId — retire un joueur des favoris. */
+/**
+ * L'utilisateur clique sur l'étoile d'un joueur déjà en favori.
+ * Le joueur est retiré de sa liste.
+ */
 router.delete("/:playerId", requireAuth, (req, res, next) => {
   Favorite.deleteOne({ user: req.user!.id, playerId: req.params.playerId })
     // Une fois la suppression faite, on enchaîne sur une deuxième requête Mongo

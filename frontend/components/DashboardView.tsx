@@ -13,7 +13,10 @@ interface DashboardViewProps {
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }
 
-/** Délai avant d'interroger le serveur pendant la frappe, en millisecondes. */
+/**
+ * L'utilisateur tape dans la barre de recherche du tableau de bord.
+ * Le serveur n'est interrogé qu'après ce délai sans nouvelle frappe.
+ */
 const SEARCH_DEBOUNCE_MS = 250;
 
 export default function DashboardView({
@@ -25,7 +28,6 @@ export default function DashboardView({
   const [topPlayers, setTopPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // La complétion s'appuie sur GET /api/players/search, pas sur un filtrage local.
   const filteredSuggestions = useAppSelector((state) => state.players.results);
 
   const [heroSearch, setHeroSearch] = useState("");
@@ -33,8 +35,10 @@ export default function DashboardView({
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const heroSearchRef = useRef<HTMLDivElement>(null);
 
-  // Le corps ne pose aucun setState synchrone : tout passe par le then/catch/finally
-  // de la promesse, seule forme acceptée par un effet (voir react-hooks/set-state-in-effect).
+  /**
+   * L'utilisateur ouvre le tableau de bord.
+   * Les joueurs mis en avant sont chargés depuis /api/dashboard.
+   */
   const loadTopPlayers = useCallback(() => {
     fetch("/api/dashboard")
       .then((res) => {
@@ -58,7 +62,10 @@ export default function DashboardView({
     loadTopPlayers();
   }, [loadTopPlayers]);
 
-  // Le délai évite un aller-retour par caractère frappé.
+  /**
+   * L'utilisateur tape dans la recherche du dashboard.
+   * L'autocomplétion se déclenche après le délai de debounce.
+   */
   useEffect(() => {
     const query = heroSearch.trim();
     if (!query) {
@@ -73,15 +80,20 @@ export default function DashboardView({
     return () => clearTimeout(timer);
   }, [dispatch, heroSearch]);
 
-  // Reset la suggestion active quand la recherche change (ajustement pendant le render,
-  // pas dans un effect, pour éviter un cycle de rendu supplémentaire).
+  /**
+   * L'utilisateur modifie sa recherche.
+   * La suggestion active repart à zéro.
+   */
   const [prevHeroSearch, setPrevHeroSearch] = useState(heroSearch);
   if (heroSearch !== prevHeroSearch) {
     setPrevHeroSearch(heroSearch);
     setActiveSuggestionIndex(0);
   }
 
-  // Find candidate for inline completion hint
+  /**
+   * L'utilisateur tape un début de nom dans la recherche.
+   * La fin du nom du meilleur résultat apparaît en complétion grisée.
+   */
   const bestMatch = filteredSuggestions[0];
   const inlineCompletion = useMemo(() => {
     if (!bestMatch || !heroSearch) return { text: "", show: false };
@@ -90,15 +102,12 @@ export default function DashboardView({
     const normFull = normalizeText(bestMatch.fullName);
     const normLast = normalizeText(bestMatch.name);
 
-    // If query matches the start of the full name
     if (normFull.startsWith(normQuery)) {
       return {
         text: bestMatch.fullName.slice(heroSearch.length),
         show: true,
       };
-    }
-    // If query matches the start of the last name (e.g., "mbappe" matches "Kylian Mbappé")
-    else if (normLast && normLast.startsWith(normQuery)) {
+    } else if (normLast && normLast.startsWith(normQuery)) {
       const lastIndex = bestMatch.fullName.toLowerCase().lastIndexOf(bestMatch.name.toLowerCase());
       if (lastIndex !== -1) {
         return {
@@ -110,7 +119,10 @@ export default function DashboardView({
     return { text: "", show: false };
   }, [bestMatch, heroSearch]);
 
-  // Close suggestions on outside click
+  /**
+   * L'utilisateur clique en dehors de la barre de recherche.
+   * Les suggestions se ferment.
+   */
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (heroSearchRef.current && !heroSearchRef.current.contains(event.target as Node)) {
@@ -158,7 +170,6 @@ export default function DashboardView({
     } else if (e.key === "Tab" || e.key === "ArrowRight") {
       if (inlineCompletion.show && inlineCompletion.text) {
         e.preventDefault();
-        // Complete the search value with the full name of the best match
         setHeroSearch(bestMatch.fullName);
         onShowToast(`Complété : ${bestMatch.fullName}`, "success");
       }
@@ -167,14 +178,12 @@ export default function DashboardView({
 
   return (
     <div className="space-y-8 animate-fadeIn" id="dashboard-view-panel">
-      {/* Hero & Universal Search */}
       <section
         className="relative h-[280px] md:h-[340px] rounded-2xl flex flex-col justify-center items-center px-4 md:px-8 border border-white/5 shadow-2xl"
         style={{
           background: "linear-gradient(rgba(10, 10, 10, 0.75), rgba(10, 10, 10, 0.95))",
         }}
       >
-        {/* Background Image with stadium brightness overlay — clipped independently */}
         <div className="absolute inset-0 z-0 rounded-2xl overflow-hidden opacity-45 mix-blend-overlay">
           <img
             alt="Stadium de football futuriste"
@@ -197,7 +206,6 @@ export default function DashboardView({
               <div className="w-full h-14 md:h-16 bg-surface-glass border border-white/10 rounded-full flex items-center relative group backdrop-blur-xl focus-within:ring-2 focus-within:ring-primary-container/40 focus-within:border-primary-container/30 transition-all shadow-inner">
                 <Search className="absolute left-5 text-on-surface-variant group-focus-within:text-primary-container transition-colors w-5 h-5 cursor-pointer z-20" />
 
-                {/* Autocomplete Ghost Text */}
                 {inlineCompletion.show && inlineCompletion.text && (
                   <div className="absolute left-14 text-sm md:text-base text-white/25 pointer-events-none select-none font-sans font-medium whitespace-pre z-10 flex items-center">
                     <span className="opacity-0">{heroSearch}</span>
@@ -219,7 +227,6 @@ export default function DashboardView({
                   autoComplete="off"
                 />
 
-                {/* Tab complete badge */}
                 {inlineCompletion.show && inlineCompletion.text && (
                   <span className="absolute right-5 text-[9px] bg-white/10 text-primary-container px-2 py-1 rounded-md font-mono font-bold animate-pulse z-20 pointer-events-none uppercase tracking-wider">
                     Tab ➔
@@ -228,7 +235,6 @@ export default function DashboardView({
               </div>
             </form>
 
-            {/* Instant suggestions dropdown */}
             {showHeroSuggestions && heroSearch.trim() && (
               <div className="absolute top-full left-0 w-full mt-3 bg-surface-container-highest border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[60] backdrop-blur-xl animate-fadeIn">
                 <div className="py-2 text-left">
@@ -308,14 +314,11 @@ export default function DashboardView({
         </div>
       </section>
 
-      {/* Grid Layout for Main Widgets */}
       {loading && <ViewLoader label="Chargement du tableau de bord..." />}
       {error && <ViewError message={error} onRetry={retryTopPlayers} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column - Latest Searches & Hot Players */}
         <section className="lg:col-span-8 space-y-6">
-          {/* Latest Searches */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold font-title-lg tracking-tight text-white flex items-center gap-2">
@@ -326,7 +329,6 @@ export default function DashboardView({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Dernières recherches */}
               {topPlayers.slice(0, 2).map((player) => (
                 <div
                   key={player.id}
@@ -381,7 +383,6 @@ export default function DashboardView({
             </div>
           </div>
 
-          {/* Hot Players Grid */}
           <div className="space-y-3 pt-2">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold font-title-lg tracking-tight text-white flex items-center gap-2">
@@ -445,9 +446,7 @@ export default function DashboardView({
           </div>
         </section>
 
-        {/* Right Column - Critical Alerts & Market Sentiment */}
         <aside className="lg:col-span-4 space-y-6">
-          {/* Critical Alerts */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold font-title-lg tracking-tight text-white flex items-center gap-2">
               <span className="w-1.5 h-5 bg-stat-decrease rounded-full"></span>
@@ -494,7 +493,6 @@ export default function DashboardView({
             </div>
           </div>
 
-          {/* Market Sentiment */}
           <div className="space-y-3">
             <div className="glass-card rounded-2xl p-5 space-y-4 border border-white/5 shadow-md">
               <h3 className="font-bold text-sm text-muted-text uppercase tracking-widest border-b border-white/5 pb-2.5 flex items-center justify-between">

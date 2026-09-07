@@ -1,7 +1,10 @@
 import { Router } from "express";
 import type { TransferMovement } from "../../shared/types.js";
 
-/** Mock data de la route. MarketView l'appelle avec un vrai fetch("/api/transfers"). */
+/**
+ * L'utilisateur ouvre l'onglet Marché.
+ * L'historique des transferts s'affiche.
+ */
 const MOCK_TRANSFER: TransferMovement[] = [
   {
     id: "lacazette-lyon-marseille-2026-08-22",
@@ -135,10 +138,9 @@ const MOCK_TRANSFER: TransferMovement[] = [
 
 const router = Router();
 
-/** Logique de la route
- * Marché des transferts. Le filtrage par période vit côté front
- * (MarketView). Revalidation à chaque appel : 304 tant que l'ETag n'a
- * pas changé.
+/**
+ * L'utilisateur charge la page Marché.
+ * Tout l'historique des transferts est renvoyé, filtré ensuite côté front.
  */
 router.get("/", (_req, res) => {
   res.set("Cache-Control", "no-cache");

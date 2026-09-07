@@ -29,7 +29,10 @@ import {
 
 type Tab = "dashboard" | "market" | "stats" | "injuries" | "favorites";
 
-/** Un onglet = une URL. La racine "/" redirige vers /dashboard. */
+/**
+ * L'utilisateur tape une URL inconnue ou visite la racine "/".
+ * Il est redirigé vers l'onglet correspondant, /dashboard par défaut.
+ */
 const TAB_PATHS: Record<Tab, string> = {
   dashboard: "/dashboard",
   market: "/market",
@@ -43,7 +46,10 @@ function tabFromPathname(pathname: string): Tab {
   return match ? match[0] : "dashboard";
 }
 
-/** Délai avant d'interroger le serveur pendant la frappe, en millisecondes. */
+/**
+ * L'utilisateur tape dans la barre de recherche.
+ * Le serveur n'est interrogé qu'après ce délai sans nouvelle frappe.
+ */
 const SEARCH_DEBOUNCE_MS = 250;
 
 export default function App() {
@@ -56,7 +62,6 @@ export default function App() {
   const activeTab = tabFromPathname(location.pathname);
   const setActiveTab = (tab: Tab) => navigate(TAB_PATHS[tab]);
 
-  // Racine et chemins inconnus retombent sur le dashboard, sans casser l'URL saisie.
   useEffect(() => {
     if (!Object.values(TAB_PATHS).includes(location.pathname)) {
       navigate(TAB_PATHS.dashboard, { replace: true });
@@ -67,7 +72,6 @@ export default function App() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  // Alert/Toast notifications
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "warning";
@@ -80,7 +84,10 @@ export default function App() {
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Clear toast timeout helper
+  /**
+   * L'utilisateur déclenche une action (connexion, favori, erreur...).
+   * Un toast apparaît puis disparaît tout seul après 3 secondes.
+   */
   const showToast = (message: string, type: "success" | "warning" = "success") => {
     setToast({ message, type, visible: true });
   };
@@ -94,7 +101,10 @@ export default function App() {
     }
   }, [toast.visible]);
 
-  // Close search suggestions on click outside
+  /**
+   * L'utilisateur clique en dehors de la barre de recherche.
+   * Le menu de suggestions se ferme.
+   */
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -108,8 +118,10 @@ export default function App() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // L'autocomplétion interroge GET /api/players/search. Le délai évite un
-  // aller-retour par caractère frappé.
+  /**
+   * L'utilisateur tape un nom dans la barre de recherche.
+   * L'autocomplétion se déclenche après le délai de debounce.
+   */
   useEffect(() => {
     const query = searchQuery.trim();
     if (!query) {
@@ -124,7 +136,10 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [dispatch, searchQuery]);
 
-  /** Ouvre une fiche déjà complète, sans aller-retour serveur. */
+  /**
+   * L'utilisateur clique sur un joueur déjà chargé (recherche, dashboard...).
+   * Sa fiche s'ouvre directement, sans nouvel appel serveur.
+   */
   function handleSelectPlayer(player: Player) {
     dispatch(playerSelected(player));
     setActiveTab("stats");
@@ -133,9 +148,8 @@ export default function App() {
   }
 
   /**
-   * Recherche par nom de joueur ou d'équipe, puis ouverture de la première fiche.
-   * Le Marché et le Centre des blessures s'en servent pour ouvrir un joueur dont
-   * ils ne connaissent que le nom.
+   * L'utilisateur clique un nom de joueur depuis Marché ou Blessures.
+   * Le joueur est recherché puis sa fiche s'ouvre.
    */
   async function handleGlobalSearch(query: string) {
     const cleanQuery = query.trim();
@@ -178,7 +192,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-pitch-dark text-on-surface font-sans antialiased overflow-x-hidden">
-      {/* Dynamic Toasts / Game notifications */}
       {toast.visible && (
         <div className="fixed top-20 right-4 md:right-8 z-[100] animate-fadeIn max-w-sm">
           <div
@@ -198,7 +211,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Fixed Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 h-16 bg-surface-glass backdrop-blur-xl border-b border-white/10 flex justify-between items-center px-6 shadow-md">
         <div
           className="flex items-center gap-3 cursor-pointer select-none"
@@ -215,7 +227,6 @@ export default function App() {
           </span>
         </div>
 
-        {/* Global Search Bar (Desktop) */}
         {activeTab !== "dashboard" ? (
           <div className="hidden md:block flex-1 max-w-md mx-8 relative" ref={searchContainerRef}>
             <form onSubmit={handleSearchSubmit}>
@@ -236,7 +247,6 @@ export default function App() {
               </div>
             </form>
 
-            {/* Autocomplete Suggestions */}
             {showSearchDropdown && searchQuery.trim() && (
               <div className="absolute top-full left-0 w-full mt-2 bg-surface-container-high border border-white/10 rounded-xl shadow-2xl z-[70] overflow-hidden backdrop-blur-md animate-fadeIn">
                 <div className="p-2 space-y-1">
@@ -285,9 +295,7 @@ export default function App() {
           <div className="hidden md:block flex-1 max-w-md mx-8" />
         )}
 
-        {/* Navigation Accessories */}
         <div className="flex items-center gap-3">
-          {/* Auth : simple accessoire, aucune rubrique du site n'en dépend */}
           {user ? (
             <div className="flex items-center gap-2">
               <span
@@ -324,7 +332,6 @@ export default function App() {
             <Bell className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-stat-decrease rounded-full ring-2 ring-pitch-dark"></span>
           </button>
-          {/* Burger menu — mobile only */}
           <button
             className="md:hidden p-2 text-on-surface-variant hover:text-white active:scale-95 transition-all"
             onClick={() => setShowMobileMenu(true)}
@@ -335,15 +342,12 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Mobile Drawer */}
       {showMobileMenu && (
         <div className="fixed inset-0 z-[80] md:hidden">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setShowMobileMenu(false)}
           />
-          {/* Drawer */}
           <aside className="absolute left-0 top-0 h-full w-72 bg-surface-container-low border-r border-white/10 shadow-2xl flex flex-col pt-6 pb-8 px-4 animate-slideInLeft">
             <div className="flex justify-between items-center mb-8 px-2">
               <span className="font-black text-lg text-primary-container tracking-tighter">
@@ -380,7 +384,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Side Sidebar for Desktop */}
       <aside className="hidden md:flex h-full w-64 fixed left-0 top-0 pt-24 flex-col bg-surface-container-low border-r border-white/5 shadow-2xl z-40">
         <nav className="flex-1 space-y-3.5 px-4">
           {NAV_ITEMS.map(({ id, label, Icon }) => (
@@ -405,10 +408,8 @@ export default function App() {
         </nav>
       </aside>
 
-      {/* Main Viewport Container */}
       <main className="pt-20 pb-8 md:pl-64 min-h-screen">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-4">
-          {/* Dynamic Tab Rendering */}
           {activeTab === "dashboard" && (
             <DashboardView
               onSelectPlayer={handleSelectPlayer}

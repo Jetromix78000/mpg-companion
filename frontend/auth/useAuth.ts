@@ -10,11 +10,8 @@ import {
 export type { AuthUser };
 
 /**
- * Adaptateur au-dessus du store : conserve la signature utilisée par les composants,
- * pour que le passage de React Context à Redux ne se propage pas dans toute l'UI.
- *
- * signup/signin ne sont pas ici : LoginModal fait son fetch directement et
- * dispatch sessionStarted() lui-même, pas de thunk intermédiaire pour ces deux-là.
+ * L'utilisateur se connecte, se déconnecte ou ouvre la modale de connexion.
+ * Ce hook expose ces actions aux composants sans exposer Redux directement.
  */
 export function useAuth() {
   const dispatch = useAppDispatch();

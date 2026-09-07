@@ -78,7 +78,7 @@ _Diagramme Excalidraw — source éditable : [docs/diagrams/schema-simple.excali
 
 ### 1. Architecture globale
 
-`auth.ts` parle à MongoDB. Chaque route data (`players.ts`, `dashboard.ts`, `transfers.ts`, `injuries.ts`, `football.ts`) répond avec le mock déclaré en tête de fichier (`MOCK_PLAYERS`, `MOCK_DASHBOARD`, `MOCK_TRANSFER`, `MOCK_INJURIES`, `MOCK_STATS`/`MOCK_FOOTBALL`) : aucun appel réseau sortant, aucune dépendance externe. `DashboardView`, `MarketView` et `InjuriesView` les appellent avec un `fetch()` direct — pas de Redux, pas de `callApi` pour ces trois-là.
+`auth.ts` et `favorite.ts` parlent à MongoDB (`User`, `Favorite`). Chaque route data (`players.ts`, `dashboard.ts`, `transfers.ts`, `injuries.ts`, `football.ts`) répond avec le mock déclaré en tête de fichier (`MOCK_PLAYERS`, `MOCK_DASHBOARD`, `MOCK_TRANSFER`, `MOCK_INJURIES`, `MOCK_STATS`/`MOCK_FOOTBALL`) : aucun appel réseau sortant, aucune dépendance externe. `DashboardView`, `MarketView`, `InjuriesView` et `ProfileView` (favoris) les appellent avec un `fetch()` direct — pas de Redux, pas de `callApi` pour celles-là. `favorite.ts` est monté deux fois dans `app.ts` (`/api/favourites` et `/api/favorites`) ; seule la seconde route sert réellement, la première est morte.
 
 ![Architecture globale](docs/diagrams/architecture-globale.png)
 
@@ -165,6 +165,7 @@ mpg-companion/
 │   ├── app.ts                     # Express, connexion Mongo, montage des routes, écoute du port
 │   ├── models/
 │   │   ├── User.ts                # email, passwordHash, token de session
+│   │   ├── Favorite.ts            # user (ref), playerId + champs joueur dénormalisés, index unique {user, playerId}
 │   │   └── connection.ts          # Connexion Mongoose (effet de bord à l'import)
 │   └── routes/
 │       ├── auth.ts                # bcrypt + gardes de session + signup/signin/session/logout
@@ -172,7 +173,8 @@ mpg-companion/
 │       ├── players.ts             # GET /search, GET /:id — MOCK_PLAYERS en tête de fichier
 │       ├── dashboard.ts           # GET / — MOCK_DASHBOARD en tête de fichier
 │       ├── transfers.ts           # GET / — MOCK_TRANSFER en tête de fichier
-│       └── injuries.ts            # GET / — MOCK_INJURIES + MOCK_CLUBS en tête de fichier
+│       ├── injuries.ts            # GET / — MOCK_INJURIES + MOCK_CLUBS en tête de fichier
+│       └── favorite.ts            # GET/POST /, DELETE /:playerId — requireAuth
 ├── frontend/
 │   ├── App.tsx                    # État global, navigation (react-router-dom), recherche
 │   ├── api.ts                     # callApi : client HTTP unique, utilisé par auth et players
@@ -197,7 +199,8 @@ mpg-companion/
 - **Fetch direct dans les View.tsx** : `DashboardView`, `MarketView` et `InjuriesView` n'ont ni reducer Redux ni module mock local — chacune fait `fetch("/api/...")` dans un `useEffect`, avec `.then((res) => res.json()).then((data) => ...)`, `useState` local pour la donnée/`loading`/`error`, et un bouton retry qui relance le même fetch. Un seul casting de trois joueurs — Dembélé (Paris Saint Germain), David (Lille), Lacazette (Lyon) — est repris à l'identique dans tous les routers, ce qui rend les écrans recoupables d'un coup d'œil. L'orthographe des clubs doit rester identique d'un fichier à l'autre.
 - **Contrat de réponse** : `{ topPlayers }`, `{ transfers }`, `{ injuries, clubs }`. `clubs` doit commencer par `"Tous les clubs"` (état initial du filtre). Côté marché, `amount: "—"` signifie « montant inconnu » et `statusLabel` doit être pris dans les libellés reconnus par `MarketView`.
 - **Recherche** (`frontend/reducers/players.ts`) : `GET /api/players/search?q=` compare nom et équipe (`matchPlayer` de `shared/search.ts`) sur les mock data, débattue à 250ms pendant la frappe.
-- **Token côté client** : stocké en `localStorage`, pas de cookie. Tous les appels passent par `callApi` (`frontend/api.ts`), aucun `fetch` nu dans les vues.
+- **Token côté client** : stocké en `localStorage`, pas de cookie. Auth et recherche passent par `callApi` (`frontend/api.ts`) ; Dashboard/Marché/Blessures/Favoris font un `fetch` nu.
+- **Favoris** : `ProfileView.tsx` fait un `fetch` nu vers `/api/favorites`, état local (pas de reducer Redux). Sans session, le toggle appelle `requestLogin()` sans atteindre le réseau. Le model `Favorite` dénormalise les champs joueur (pas de `populate`) : à garder synchrone avec `Player` si sa forme change.
 
 ## Note sur cette documentation
 

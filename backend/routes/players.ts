@@ -2,11 +2,9 @@ import { Router } from "express";
 import type { Player } from "../../shared/types.js";
 import { matchPlayer } from "../../shared/search.js";
 
-/** Logique du mock data
- * Trois joueurs, un par club, repris à l'identique dans dashboard.ts,
- * transfers.ts, injuries.ts et football.ts. Objets volontairement
- * COMPLETS (ProfileView lit tous les champs imbriqués) et orthographe
- * des clubs identique dans les cinq routes — sinon les filtres cassent.
+/**
+ * L'utilisateur cherche un joueur ou ouvre sa fiche.
+ * Ces objets complets alimentent la recherche et la fiche détaillée.
  */
 const MOCK_PLAYERS: Player[] = [
   {
@@ -354,13 +352,10 @@ const MOCK_PLAYERS: Player[] = [
 
 const router = Router();
 
-/** Logique de l'ordre des routes
- * /search doit rester déclarée AVANT /:id, sinon "search" est pris pour
- * un identifiant. Cache-Control: no-cache sur les deux : Express calcule
- * un ETag et répond 304 tant que le résultat n'a pas changé.
+/**
+ * L'utilisateur tape un nom dans la barre de recherche.
+ * Les joueurs correspondants (nom ou équipe) s'affichent.
  */
-
-/** Recherche par nom de joueur ou d'équipe (matchPlayer compare les deux). */
 router.get("/search", (req, res) => {
   const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
   const found = query ? MOCK_PLAYERS.filter((p) => matchPlayer(p, query)) : [];
@@ -368,7 +363,10 @@ router.get("/search", (req, res) => {
   res.json({ players: found });
 });
 
-/** Fiche complète d'un joueur. */
+/**
+ * L'utilisateur clique sur un résultat de recherche ou un joueur.
+ * Sa fiche complète s'affiche.
+ */
 router.get("/:id", (req, res) => {
   const player = MOCK_PLAYERS.find((p) => p.id === req.params.id);
 

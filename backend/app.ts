@@ -16,10 +16,9 @@ dotenv.config({ quiet: true });
 const PORT = Number(process.env.PORT ?? 3000);
 const isProduction = process.env.NODE_ENV === "production";
 
-/** Logique du détecteur Vercel
- * Sur Vercel, pas de process persistant : app.listen() n'a rien à ouvrir,
- * et le fallback statique est déjà couvert par @vercel/static-build dans
- * vercel.json.
+/**
+ * L'utilisateur charge le site déployé sur Vercel.
+ * app.listen() ne s'exécute pas, @vercel/static-build gère déjà le fallback.
  */
 const isVercel = Boolean(process.env.VERCEL);
 
@@ -27,11 +26,9 @@ const app = express();
 
 app.use(express.json({ limit: "100kb" }));
 
-/** Logique d'attente Mongo avant chaque route
- * En serverless, rien n'attend connectionPromise avant qu'une requête
- * arrive. Sans ce garde, la première requête d'un conteneur froid passe
- * par le buffering interne de mongoose et abandonne après 10s si Atlas
- * n'a pas fini de répondre — d'où "buffering timed out after 10000ms".
+/**
+ * L'utilisateur appelle une route /api sur un conteneur serverless froid.
+ * Sa requête attend que MongoDB soit prêt avant de continuer.
  */
 app.use("/api", async (_req, res, next) => {
   try {
@@ -56,26 +53,32 @@ app.use("/api", (req, res, next) => {
   next();
 });
 
-// Parcours de connexion : signup, signin, session, logout. Persisté en MongoDB.
-// Le reste du site reste accessible sans compte.
+/**
+ * L'utilisateur s'inscrit, se connecte ou navigue sans compte.
+ * Le reste du site reste accessible même sans authentification.
+ */
 app.use("/api/auth", authRouter);
 
 app.use("/api/players", playersRouter);
 
-// dashboard/transfers/injuries : appelées directement par DashboardView, MarketView
-// et InjuriesView via fetch(), sans passer par Redux ni callApi.
+/**
+ * L'utilisateur ouvre Dashboard, Marché ou Blessures.
+ * Chaque vue récupère ses données en direct, sans passer par Redux.
+ */
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/transfers", transfersRouter);
 app.use("/api/injuries", injuriesRouter);
 app.use("/api/favorites", favoriteRouter);
 
-// Route de contrôle : santé de la source de données et fiches statistiques détaillées.
+/**
+ * L'utilisateur ouvre la fiche stats d'un joueur.
+ * Santé de la source et détail statistique sont servis ici.
+ */
 app.use("/api/football", footballRouter);
 
-/** Logique du filet de sécurité final
- * Renvoie du JSON aux appels /api et laisse le message technique côté
- * logs, jamais côté client. Express 5 y achemine tout seul les rejets
- * des handlers async.
+/**
+ * L'utilisateur déclenche une erreur non gérée sur une route /api.
+ * Il reçoit un message générique, le détail technique reste dans les logs.
  */
 app.use("/api", (err: unknown, req: Request, res: Response, next: NextFunction) => {
   if (res.headersSent) return next(err);
@@ -87,10 +90,9 @@ app.use("/api", (err: unknown, req: Request, res: Response, next: NextFunction) 
   res.status(500).json({ error: "Erreur serveur" });
 });
 
-/** Logique du fallback statique
- * En dev, Vite (port 3001) proxy /api ici. En prod hors Vercel, ce
- * serveur sert aussi les fichiers construits par Vite, avec un fallback
- * SPA — Express 5 n'accepte plus le motif "*".
+/**
+ * L'utilisateur ouvre n'importe quelle page en prod hors Vercel.
+ * Le HTML du build Vite lui est servi, avec fallback SPA.
  */
 if (isProduction && !isVercel) {
   const distPath = path.join(process.cwd(), "dist");
@@ -100,11 +102,9 @@ if (isProduction && !isVercel) {
   });
 }
 
-/** Logique du démarrage local
- * On attend MongoDB avant d'ouvrir le port : démarrer sans base ferait
- * échouer toutes les requêtes d'auth avec une erreur obscure. Sur
- * Vercel, l'export par défaut suffit : @vercel/node invoque `app`
- * directement à chaque requête, sans jamais appeler listen().
+/**
+ * L'utilisateur lance le serveur en local.
+ * Le port ne s'ouvre qu'une fois MongoDB joignable.
  */
 if (!isVercel) {
   connectionPromise

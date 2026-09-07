@@ -12,12 +12,18 @@ export interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   token: string | null;
-  /** true tant que la première vérification de session n'a pas répondu */
+  /**
+   * L'utilisateur recharge le site avec un token en localStorage.
+   * loading reste vrai tant que la vérification de session n'a pas répondu.
+   */
   loading: boolean;
   isLoginOpen: boolean;
 }
 
-/** localStorage lève en navigation privée sur certains navigateurs : on encaisse. */
+/**
+ * L'utilisateur navigue en mode privé, où localStorage peut lever une erreur.
+ * L'échec est absorbé, aucun token n'est restauré.
+ */
 function readStoredToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY);
@@ -31,7 +37,10 @@ export function storeToken(token: string | null): void {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else localStorage.removeItem(TOKEN_KEY);
   } catch {
-    // Session non persistée : l'utilisateur devra se reconnecter au rechargement.
+    /**
+     * L'utilisateur recharge la page sans que le token ait pu être stocké.
+     * Il devra se reconnecter, la session n'a pas persisté.
+     */
   }
 }
 
@@ -40,7 +49,6 @@ const storedToken = readStoredToken();
 const INITIAL_STATE: AuthState = {
   user: null,
   token: storedToken,
-  // On ne fait patienter l'interface que s'il y a un token à vérifier.
   loading: Boolean(storedToken),
   isLoginOpen: false,
 };
@@ -50,7 +58,10 @@ interface AuthResponse {
   token: string;
 }
 
-/** Relit l'utilisateur du token présent en localStorage, au démarrage de l'application. */
+/**
+ * L'utilisateur ouvre l'application avec un token en localStorage.
+ * Son profil est revérifié auprès du serveur.
+ */
 export const fetchSession = createAsyncThunk("auth/fetchSession", async (_arg, { getState }) => {
   const token = (getState() as { auth: AuthState }).auth.token;
   if (!token) return null;
@@ -59,14 +70,20 @@ export const fetchSession = createAsyncThunk("auth/fetchSession", async (_arg, {
   return data.user;
 });
 
-/** Vide le token côté serveur, puis nettoie localement quoi qu'il arrive. */
+/**
+ * L'utilisateur clique sur se déconnecter.
+ * Son token est vidé côté serveur, puis effacé localement dans tous les cas.
+ */
 export const logout = createAsyncThunk("auth/logout", async (_arg, { getState }) => {
   const token = (getState() as { auth: AuthState }).auth.token;
 
   try {
     await callApi("/api/auth/logout", { method: "POST", token });
   } catch {
-    // Token déjà invalide côté serveur : la déconnexion locale reste le bon résultat.
+    /**
+     * Le token était déjà invalide côté serveur.
+     * La déconnexion locale reste appliquée malgré l'erreur.
+     */
   }
   storeToken(null);
 });
@@ -82,8 +99,8 @@ const authSlice = createSlice({
       state.isLoginOpen = false;
     },
     /**
-     * Pose la session après un signup/signin fait par le composant (fetch direct,
-     * pas de thunk) et referme la modale en une seule transition.
+     * L'utilisateur valide le formulaire de connexion ou d'inscription.
+     * Sa session s'ouvre et la modale se referme aussitôt.
      */
     sessionStarted(state, action: PayloadAction<AuthResponse>) {
       state.user = action.payload.user;
@@ -98,7 +115,10 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.loading = false;
       })
-      // Token périmé ou serveur injoignable : on repart proprement en déconnecté.
+      /**
+       * Le token de l'utilisateur est périmé ou le serveur est injoignable.
+       * Il repasse proprement en déconnecté.
+       */
       .addCase(fetchSession.rejected, (state) => {
         storeToken(null);
         state.user = null;

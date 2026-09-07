@@ -1,8 +1,8 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 
 /**
- * Deux états partagés par les vues qui chargent leurs données depuis l'API.
- * Sans eux, un serveur éteint donnerait un écran vide sans explication.
+ * L'utilisateur attend le chargement d'une vue, ou le serveur est injoignable.
+ * Un loader ou un message d'erreur avec bouton "Réessayer" s'affiche.
  */
 
 export function ViewLoader({ label }: { label: string }) {
@@ -19,8 +19,6 @@ export function ViewError({ message, onRetry }: { message: string; onRetry?: () 
     <div className="glass-card rounded-2xl border border-stat-decrease/20 px-3 py-6 sm:p-10 flex flex-col items-center text-center gap-3 animate-fadeIn">
       <AlertCircle className="w-6 h-6 text-stat-decrease" />
       <p className="text-sm font-black text-white">Données indisponibles</p>
-      {/* Message sur une seule ligne, y compris sur mobile : la police descend
-          d'un cran sous 640 px pour que la phrase tienne dans la largeur. */}
       <p className="text-[10px] sm:text-xs text-on-surface-variant font-medium whitespace-nowrap">
         {message}
       </p>

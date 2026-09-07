@@ -16,10 +16,9 @@ const userSchema = new Schema<UserAttributes>({
   displayName: { type: String, trim: true },
 });
 
-/** Logique
- * token est unique pour éviter que plusieurs comptes soient connectés en même temps.
- * token est nullable pour permettre à un compte de se déconnecter (token = null).
- * token est sparse pour permettre à plusieurs comptes d'avoir token = null (sparse = true).
+/**
+ * L'utilisateur se connecte ailleurs ou se déconnecte.
+ * Son ancien token devient invalide, une seule session reste active.
  */
 
 export const User = model<UserAttributes>("User", userSchema);

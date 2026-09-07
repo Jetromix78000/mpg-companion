@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { InjuryStatus, type InjuryItem } from "../../shared/types.js";
 
-/** Mock data de la route. InjuriesView l'appelle avec un vrai fetch("/api/injuries"). */
+/**
+ * L'utilisateur ouvre le centre des blessures.
+ * La liste des joueurs blessés s'affiche.
+ */
 const MOCK_INJURIES: InjuryItem[] = [
   {
     id: "dembele",
@@ -107,7 +110,10 @@ const MOCK_INJURIES: InjuryItem[] = [
   },
 ];
 
-/** "Tous les clubs" doit rester en tête : état initial du select d'InjuriesView. */
+/**
+ * L'utilisateur ouvre le filtre par club.
+ * "Tous les clubs" apparaît en premier, comme état de départ.
+ */
 const MOCK_CLUBS: string[] = [
   "Tous les clubs",
   "Paris Saint Germain",
@@ -119,10 +125,9 @@ const MOCK_CLUBS: string[] = [
 
 const router = Router();
 
-/** Logique de la route
- * Centre des blessures : les blessures et la liste de clubs qui alimente
- * le filtre. Revalidation à chaque appel : 304 tant que l'ETag n'a pas
- * changé.
+/**
+ * L'utilisateur charge la page Blessures.
+ * Les blessures et la liste des clubs pour le filtre sont renvoyées.
  */
 router.get("/", (_req, res) => {
   res.set("Cache-Control", "no-cache");

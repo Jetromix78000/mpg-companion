@@ -7,7 +7,10 @@ import { ViewError, ViewLoader } from "./ViewState";
 import { ArrowRight, RefreshCw, CheckCircle, TrendingUp, XCircle } from "lucide-react";
 
 interface MarketViewProps {
-  /** Ouvre la fiche du joueur en repassant par la recherche serveur. */
+  /**
+   * L'utilisateur clique une carte de transfert.
+   * Le joueur est recherché côté serveur, puis sa fiche s'ouvre.
+   */
   onOpenPlayerByName: (name: string) => void;
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }
@@ -43,10 +46,10 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
     loadTransferItems();
   }, [loadTransferItems]);
 
-  // Le back ne suit que 3 joueurs : une carte par joueur. La liste arrive triée
-  // du plus récent au plus ancien, et on privilégie le transfert dont le montant
-  // est connu — sinon la carte n'afficherait qu'un tiret. On compare le nom de
-  // famille : l'API abrège le prénom ("O. Dembélé").
+  /**
+   * L'utilisateur ouvre le Marché.
+   * Une seule carte par joueur s'affiche, en priorisant le montant connu.
+   */
   const byPlayer = new Map<string, TransferMovement>();
   for (const transfer of transfers) {
     const surname = lastNameToken(transfer.playerName);
@@ -67,13 +70,15 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
     safePage * PAGE_SIZE,
   );
 
-  // Separate confirmed vs rumors for rendering layout headers
   const confirmedMovements = pageTransfers.filter(
     (t) => t.type === "Official" || t.type === "Prolongation",
   );
   const rumorsMovements = pageTransfers.filter((t) => t.type === "Rumor");
 
-  // La résolution du joueur se fait côté serveur : on ne connaît ici qu'un nom.
+  /**
+   * L'utilisateur clique une carte de transfert.
+   * Un toast résume le mouvement, puis la fiche du joueur s'ouvre.
+   */
   const handleCardClick = (transfer: TransferMovement) => {
     onShowToast(
       `${transfer.playerName} : ${transfer.fromTeam} ➔ ${transfer.toTeam} — ${transfer.description}`,
@@ -84,7 +89,6 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
 
   return (
     <div className="space-y-8 animate-fadeIn" id="market-view-panel">
-      {/* Header & Filters */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
           <h1 className="text-3xl font-extrabold font-title-lg tracking-tight text-white">
@@ -99,7 +103,6 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
       {loading && <ViewLoader label="Chargement du marché des transferts..." />}
       {error && <ViewError message={error} onRetry={retryTransferItems} />}
 
-      {/* Section: Mouvements Confirmés */}
       {confirmedMovements.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2 pb-2">
@@ -166,7 +169,6 @@ export default function MarketView({ onOpenPlayerByName, onShowToast }: MarketVi
         </section>
       )}
 
-      {/* Section: Rumeurs & Négociations */}
       {rumorsMovements.length > 0 && (
         <section className="space-y-4 pt-4">
           <div className="flex items-center gap-2 pb-2">

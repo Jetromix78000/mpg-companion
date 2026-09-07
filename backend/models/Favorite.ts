@@ -37,7 +37,10 @@ const favoriteSchema = new Schema<FavoriteAttributes>(
   },
 );
 
-// Un utilisateur ne peut pas mettre deux fois le même joueur en favori.
+/**
+ * L'utilisateur tente d'ajouter un joueur déjà en favori.
+ * L'index unique empêche le doublon.
+ */
 favoriteSchema.index({ user: 1, playerId: 1 }, { unique: true });
 
 export const Favorite = model<FavoriteAttributes>("Favorite", favoriteSchema);

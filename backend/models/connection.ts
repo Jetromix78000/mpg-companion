@@ -5,10 +5,9 @@ dotenv.config({ quiet: true });
 
 const mongoUri = process.env.MONGODB_URI?.trim();
 
-/** Logique d'échec selon l'environnement
- * Local : échoue fort et tôt, sinon les routes d'auth échouent avec une
- * erreur obscure. Vercel : `process.exit` tuerait la fonction entière,
- * y compris les routes mock — le module reste donc chargeable.
+/**
+ * L'utilisateur lance le serveur sans MONGODB_URI en local.
+ * Le démarrage échoue tout de suite avec un message clair.
  */
 const isVercel = Boolean(process.env.VERCEL);
 
@@ -19,22 +18,18 @@ if (!mongoUri && !isVercel) {
   process.exit(1);
 }
 
-/** Logique du pool de connexions en serverless express
- * Chaque conteneur Atlas froid exécute ce fichier de zéro et ouvre son propre
- * pool. `maxPoolSize: 10` évite qu'une poignée de conteneurs sature les
- * 500 connexions du palier gratuit Atlas. `serverSelectionTimeoutMS: 8000`
- * reste sous les 10s d'une fonction Hobby, pour échouer avec un log plutôt que se faire couper en silence.
+/**
+ * L'utilisateur déclenche un cold start serverless sur Vercel.
+ * Le pool Mongo reste borné pour ne pas saturer le palier gratuit Atlas.
  */
 const connectOptions = {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 8000,
 } as const;
 
-/** Logique de la promesse de connexion
- * Créée une fois à l'import, elle sert de point de synchronisation :
- * `app.ts` l'attend avant de router une requête. Une promesse ne
- * s'exécute qu'une fois — les `await` suivants dans le même conteneur
- * sont immédiats.
+/**
+ * L'utilisateur envoie une requête /api pendant que Mongo se connecte.
+ * Sa requête attend cette même promesse avant d'être routée.
  */
 export const connectionPromise = mongoUri
   ? mongoose.connect(mongoUri, connectOptions).then((instance) => {
@@ -43,10 +38,9 @@ export const connectionPromise = mongoUri
     })
   : Promise.reject(new Error("MONGODB_URI manquante"));
 
-/** Logique de diagnostic de l'URI
- * Décrit l'URI sans jamais révéler le mot de passe. Atlas renvoie le même
- * message ("Could not connect to any servers") pour un whitelist manquant
- * qu'une URI mal recopiée — ceci distingue les deux depuis les logs.
+/**
+ * La connexion Mongo échoue au démarrage.
+ * L'URI est décrite dans les logs sans jamais exposer le mot de passe.
  */
 function describeUri(uri: string | undefined): string {
   if (!uri) return "URI absente";
@@ -56,10 +50,9 @@ function describeUri(uri: string | undefined): string {
   return `${scheme}://…@${host}${database ?? " (aucune base)"}`;
 }
 
-/** Logique du filet sur la promesse
- * Sans ce `catch`, le rejet resterait non géré sur Vercel (pas de
- * `listen()` pour le consommer) et couperait le process. Il ne rattrape
- * rien : il trace juste l'échec sans faire planter le serveur.
+/**
+ * L'utilisateur charge le site pendant que Mongo est injoignable.
+ * L'erreur est tracée dans les logs sans faire planter le serveur.
  */
 connectionPromise.catch((error: unknown) => {
   console.error(

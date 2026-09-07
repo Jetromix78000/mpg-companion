@@ -8,11 +8,8 @@ interface ClubLogoProps {
 }
 
 /**
- * Écusson de club, avec repli sur un blason générique.
- *
- * Deux cas de repli, tous deux fréquents : API Football renvoie parfois un club
- * sans écusson (`logo: null`), et une URL existante peut casser. Sans ce repli,
- * la ligne de transfert afficherait un carré vide au milieu de « X ➔ Y ».
+ * L'utilisateur voit un club sans écusson ou dont l'image casse.
+ * Un blason générique s'affiche à la place.
  */
 export const ClubLogo: React.FC<ClubLogoProps> = ({ src, name, className = "w-4 h-4" }) => {
   const [hasError, setHasError] = useState(false);

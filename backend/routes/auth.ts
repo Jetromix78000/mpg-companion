@@ -10,10 +10,9 @@ import uid2 from "uid2";
 import type { UserDocument } from "../models/User.js";
 import { User } from "../models/User.js";
 
-/** Logique du fichier
- * Tout le parcours de connexion tient ici : hachage des mots de passe,
- * gardes de session et routes signup/signin/me/logout. Rien de tout ça
- * n'est utilisé ailleurs dans le serveur, un seul fichier suffit.
+/**
+ * L'utilisateur s'inscrit, se connecte ou se déconnecte via ce fichier.
+ * Son mot de passe est vérifié et son token de session est géré.
  */
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -49,10 +48,9 @@ declare global {
   }
 }
 
-/** Logique de résolution du token
- * Résout l'utilisateur porté par `Authorization: Bearer <token>`. Le token
- * vit sur User : le logout le vide, ce qui suffit à le rendre inutilisable.
- * Renvoie null si l'en-tête manque ou si aucun compte ne correspond.
+/**
+ * L'utilisateur envoie son token dans l'en-tête Authorization.
+ * Son compte est retrouvé, ou null s'il n'est plus valide.
  */
 async function resolveUser(req: Request): Promise<AuthenticatedUser | null> {
   const [scheme, token] = (req.headers.authorization ?? "").split(" ");
@@ -64,7 +62,10 @@ async function resolveUser(req: Request): Promise<AuthenticatedUser | null> {
   return { id: String(user._id), email: user.email, displayName: user.displayName ?? null };
 }
 
-/** Refuse la requête en 401 si personne n'est authentifié. */
+/**
+ * L'utilisateur appelle une route protégée sans être connecté.
+ * La requête est refusée avec un 401.
+ */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const user = await resolveUser(req);
 
@@ -76,10 +77,9 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   next();
 }
 
-/** Logique de la session anonyme
- * Attache l'utilisateur s'il y en a un, laisse passer sinon. Utilisé par
- * GET /api/auth/session, qui répond 200 avec user:null pour un visiteur
- * anonyme plutôt que 401.
+/**
+ * L'utilisateur visite /api/auth/session, connecté ou non.
+ * Sa session est attachée si elle existe, sinon la requête continue quand même.
  */
 async function attachUser(req: Request, _res: Response, next: NextFunction) {
   req.user = (await resolveUser(req)) ?? undefined;
@@ -88,7 +88,10 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
 
 const router = Router();
 
-/** Représentation publique d'un utilisateur. Ne jamais y ajouter passwordHash ni token. */
+/**
+ * L'utilisateur reçoit ses infos de compte après signup/signin/session.
+ * passwordHash et token ne sont jamais renvoyés au client.
+ */
 function publicUser(user: UserDocument) {
   return {
     id: String(user._id),
@@ -97,7 +100,10 @@ function publicUser(user: UserDocument) {
   };
 }
 
-/** Lit et normalise les identifiants du corps de la requête. */
+/**
+ * L'utilisateur soumet le formulaire de connexion ou d'inscription.
+ * Son email et son mot de passe sont extraits et nettoyés.
+ */
 function readCredentials(body: unknown) {
   const source = (body ?? {}) as Record<string, unknown>;
   return {
@@ -107,7 +113,10 @@ function readCredentials(body: unknown) {
   };
 }
 
-/** Crée le compte et ouvre la session dans la foulée. */
+/**
+ * L'utilisateur s'inscrit via la route /signup.
+ * Son compte est créé et sa session s'ouvre aussitôt.
+ */
 router.post("/signup", async (req, res) => {
   const { email, password, displayName } = readCredentials(req.body);
 
@@ -145,7 +154,10 @@ router.post("/signup", async (req, res) => {
   res.status(201).json({ user: publicUser(user), token });
 });
 
-/** Connexion email + mot de passe. Renvoie le token que le client stockera. */
+/**
+ * L'utilisateur se connecte via la route /signin.
+ * Il reste connecté et reçoit son token de session.
+ */
 router.post("/signin", async (req, res) => {
   const { email, password } = readCredentials(req.body);
 
@@ -170,13 +182,17 @@ router.post("/signin", async (req, res) => {
   res.json({ user: publicUser(user), token: user.token });
 });
 
-/** État de session pour le client. Répond 200 avec user:null quand personne n'est connecté. */
+/**
+ * L'utilisateur revient sur le site et son état de session est vérifié.
+ * Il récupère son profil, ou null s'il n'est pas connecté.
+ */
 router.get("/session", attachUser, (req, res) => {
   res.json({ user: req.user ?? null });
 });
 
-/** Logique du logout
- * Vider le token du compte suffit à le rendre inutilisable.
+/**
+ * L'utilisateur se déconnecte via la route /logout.
+ * Son token est retiré et sa session devient inutilisable.
  */
 router.post("/logout", requireAuth, async (req, res) => {
   await User.updateOne({ _id: req.user!.id }, { $unset: { token: "" } });

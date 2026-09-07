@@ -7,7 +7,10 @@ import { HeartCrack, Calendar, Search, ChevronLeft, ChevronRight } from "lucide-
 const PAGE_SIZE = 20;
 
 interface InjuriesViewProps {
-  /** Ouvre la fiche du joueur en repassant par la recherche serveur. */
+  /**
+   * L'utilisateur clique une ligne de blessure.
+   * Le joueur est recherché côté serveur, puis sa fiche s'ouvre.
+   */
   onOpenPlayerByName: (name: string) => void;
   onShowToast: (message: string, type?: "success" | "warning") => void;
 }
@@ -49,12 +52,17 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Compteurs de l'en-tête : comptés sur les données réellement reçues.
+  /**
+   * L'utilisateur ouvre le centre des blessures.
+   * Les compteurs de l'en-tête reflètent les données réellement reçues.
+   */
   const countByStatus = (status: InjuryStatus) =>
     injuries.filter((injury) => injury.status === status).length;
 
-  // Un seul championnat désormais (Ligue 1) : plus de filtre par ligue, ni de
-  // recherche globale d'équipe — le club et le statut suffisent.
+  /**
+   * L'utilisateur choisit un club, un statut, ou tape une recherche.
+   * La liste des blessures affichée se filtre en conséquence.
+   */
   const filteredInjuries = useMemo(() => {
     return injuries.filter((injury) => {
       if (selectedClub !== "Tous les clubs" && injury.clubName !== selectedClub) {
@@ -87,7 +95,10 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
     return filteredInjuries.slice(start, start + PAGE_SIZE);
   }, [filteredInjuries, currentPage]);
 
-  // La résolution du joueur se fait côté serveur : on ne connaît ici qu'un nom.
+  /**
+   * L'utilisateur clique une ligne du tableau des blessures.
+   * Un toast résume le cas, puis la fiche du joueur s'ouvre.
+   */
   const handleInjuryRowClick = (injury: InjuryItem) => {
     onShowToast(`${injury.playerName} — ${injury.type} : ${injury.detail}`, "success");
     onOpenPlayerByName(injury.playerName);
@@ -95,7 +106,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
 
   return (
     <div className="space-y-6 animate-fadeIn" id="injuries-view-panel">
-      {/* Header & Summary Cards */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl font-extrabold font-title-lg tracking-tight text-white flex items-center gap-2">
@@ -138,10 +148,8 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
       {loading && <ViewLoader label="Chargement du centre des blessures..." />}
       {error && <ViewError message={error} onRetry={retryInjuryItems} />}
 
-      {/* Filter Bar */}
       <section className="bg-surface-elevated p-5 rounded-2xl border border-white/5 shadow-xl sticky top-[72px] z-30 backdrop-blur-md">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-          {/* Club Filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-text uppercase tracking-wider ml-1">
               Club
@@ -165,7 +173,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
             </div>
           </div>
 
-          {/* Status Filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-text uppercase tracking-wider ml-1">
               Statut Médical
@@ -191,7 +198,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
             </div>
           </div>
 
-          {/* Search */}
           <div className="sm:col-span-2 space-y-1.5 relative">
             <label className="text-xs font-bold text-muted-text uppercase tracking-wider ml-1">
               Recherche rapide
@@ -213,7 +219,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
         </div>
       </section>
 
-      {/* Players List Table */}
       <section className="bg-surface-elevated rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -234,7 +239,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
                     className="hover:bg-white/5 cursor-pointer transition-all duration-200 group"
                     onClick={() => handleInjuryRowClick(injury)}
                   >
-                    {/* Player / Club column */}
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="relative h-12 w-12 rounded-full overflow-hidden border border-white/10 shrink-0 bg-surface-container">
@@ -255,7 +259,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
                       </div>
                     </td>
 
-                    {/* Injury Type column */}
                     <td className="py-4 px-6">
                       <div className="flex flex-col min-w-[150px]">
                         <span className="text-sm font-bold text-white">{injury.type}</span>
@@ -263,7 +266,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
                       </div>
                     </td>
 
-                    {/* Estimated Return column */}
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-1.5 text-white min-w-[140px]">
                         <Calendar className="text-muted-text w-4 h-4 shrink-0" />
@@ -273,7 +275,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
                       </div>
                     </td>
 
-                    {/* Status badge column */}
                     <td className="py-4 px-6 text-center">
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
@@ -301,7 +302,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
                       </span>
                     </td>
 
-                    {/* Confidence Slider column */}
                     <td className="py-4 px-6">
                       <div className="space-y-1 min-w-[120px]">
                         <div className="flex justify-between text-xs font-semibold">
@@ -337,7 +337,6 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="p-6 flex flex-col items-center justify-center gap-3 border-t border-white/5 bg-surface-container-low">
           <div className="flex items-center gap-2">
             <button

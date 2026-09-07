@@ -1,8 +1,8 @@
 import { Router } from "express";
 
-/** Logique du contrat de la fiche
- * Contrat de la fiche statistique détaillée, autrefois construit à partir
- * d'API Football. Conservé tel quel : la forme de réponse ne change pas.
+/**
+ * L'utilisateur ouvre la fiche détaillée d'un joueur.
+ * Ces champs composent la réponse qu'il reçoit.
  */
 interface PlayerFootballStats {
   player: {
@@ -47,10 +47,9 @@ interface PlayerFootballStats {
 
 const SEASON = 2026;
 
-/** Logique du mock data
- * Les trois mêmes joueurs que players.ts, dashboard.ts, transfers.ts et
- * injuries.ts, sous forme numérique : `id` est l'identifiant utilisé par
- * /stats?playerId=, distinct des identifiants texte ("dembele", "david").
+/**
+ * L'utilisateur choisit un joueur dans la recherche ou une liste.
+ * Son id numérique sert ensuite à demander /stats?playerId=.
  */
 const MOCK_FOOTBALL = [
   { id: 153, name: "Ousmane Dembélé", team: "Paris Saint Germain" },
@@ -333,19 +332,19 @@ const MOCK_STATS: Record<number, PlayerFootballStats> = {
 
 const router = Router();
 
-/** Logique du cache HTTP
- * "Cache-Control: no-cache" sur chaque GET : Express calcule un ETag et
- * répond 304 tant que le mock n'a pas changé, 200 sinon — comme une vraie
- * API. Non appliqué aux branches d'erreur (400) : rien à revalider.
+/**
+ * L'utilisateur (ou un outil de supervision) vérifie que l'API répond.
+ * Un statut simple et le nombre de joueurs couverts sont renvoyés.
  */
-
-/** Contrôle de vie de la source de données. Plus de clé ni d'appel externe. */
 router.get("/health", (_req, res) => {
   res.set("Cache-Control", "no-cache");
   res.json({ ok: true, source: "mock", season: SEASON, players: MOCK_FOOTBALL.length });
 });
 
-/** Fiche statistique détaillée d'un joueur sélectionné. */
+/**
+ * L'utilisateur ouvre la fiche stats d'un joueur sélectionné.
+ * Les statistiques détaillées de la saison s'affichent.
+ */
 router.get("/stats", (req, res) => {
   const playerIdParam = req.query.playerId;
 
@@ -370,7 +369,10 @@ router.get("/stats", (req, res) => {
   res.json(stats);
 });
 
-/** Liste des joueurs couverts. Tableau nu, comme attendu par les appelants. */
+/**
+ * L'utilisateur consulte la liste des joueurs suivis par l'app.
+ * Le tableau complet est renvoyé.
+ */
 router.get("/players", (_req, res) => {
   res.set("Cache-Control", "no-cache");
   res.json(MOCK_FOOTBALL);

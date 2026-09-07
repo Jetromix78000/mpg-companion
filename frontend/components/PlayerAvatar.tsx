@@ -13,7 +13,10 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
 }) => {
   const [hasError, setHasError] = useState(false);
 
-  // Get initials (e.g., "Kylian Mbappé" -> "KM", "Saka" -> "S")
+  /**
+   * L'utilisateur voit un joueur sans photo ou dont l'image casse.
+   * Ses initiales s'affichent à la place (ex. "Kylian Mbappé" -> "KM").
+   */
   const getInitials = (fullName: string) => {
     const cleanName = fullName.trim();
     if (!cleanName) return "?";

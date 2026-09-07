@@ -21,6 +21,10 @@ const FavoriteView: React.FC<FavoriteViewProps> = ({ onOpenPlayerByName }) => {
   const token = useAppSelector((state) => state.auth.token);
   const [favorites, setFavorites] = useState<FavoritePlayer[]>([]);
 
+  /**
+   * L'utilisateur connecté ouvre cette section.
+   * Sa liste de favoris se charge depuis le serveur.
+   */
   useEffect(() => {
     if (!user) return;
     fetch("/api/favorites", { headers: { Authorization: `Bearer ${token}` } })

@@ -1,13 +1,7 @@
 /**
- * Client HTTP de l'application : un seul endroit qui sait parler à l'API Express.
- * Tous les reducers passent par ici, aucun `fetch` nu dans les vues.
- *
- * Ce fichier ne connaît AUCUN mock : c'est un client HTTP générique, il ne sait pas
- * ce qu'il y a derrière la route. Les données mock (joueurs, favoris, etc.) vivent
- * uniquement côté backend, en tête de chaque router (`MOCK_PLAYERS`, `MOCK_DASHBOARD`...).
+ * L'utilisateur se connecte ou cherche un joueur.
+ * La requête part vers l'API Express avec son token, si présent.
  */
-
-/** Appelle le serveur Express en ajoutant le token courant, et remonte le message d'erreur du serveur. */
 export function callApi<T>(
   path: string,
   options: { method?: string; body?: unknown; token?: string | null } = {},
@@ -25,7 +19,6 @@ export function callApi<T>(
       throw new Error("Connexion au serveur impossible");
     })
     .then((response) => {
-      // 204 : réponse sans corps, il n'y a rien à analyser.
       if (response.status === 204) return undefined as T;
 
       return response
@@ -40,7 +33,10 @@ export function callApi<T>(
     });
 }
 
-/** Message lisible à afficher pour une erreur remontée par un thunk. */
+/**
+ * L'utilisateur déclenche une action qui échoue (connexion, recherche...).
+ * Un message lisible est renvoyé pour l'afficher dans un toast.
+ */
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Opération impossible";
 }
