@@ -248,7 +248,7 @@ function getTeamGamesPlayed(teamId: number): Promise<number | null> {
     });
 }
 
-function mapPosition(rawPosition: string | null): { short: string; long: string } {
+export function mapPosition(rawPosition: string | null): { short: string; long: string } {
   switch (rawPosition) {
     case "Goalkeeper":
       return { short: PlayerPosition.Gk, long: rawPosition };

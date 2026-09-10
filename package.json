@@ -15,7 +15,9 @@
     "lint": "yarn typecheck && eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "jest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
@@ -38,6 +40,7 @@
     "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -49,9 +52,12 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.4",
     "globals": "^17.11.0",
+    "husky": "^9.1.7",
+    "jest": "^30.5.1",
     "nodemon": "^3.1.14",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.1.14",
+    "ts-jest": "^29.4.12",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.67.0",
