@@ -225,7 +225,7 @@ export default function App() {
                     setShowSearchDropdown(true);
                   }}
                   onFocus={() => setShowSearchDropdown(true)}
-                  placeholder="Rechercher un joueur (Dembélé, Ajorque, Lacazette...)"
+                  placeholder="Rechercher un joueur (Dembélé, David, Lacazette...)"
                   type="text"
                   autoComplete="off"
                 />

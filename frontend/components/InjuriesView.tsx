@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { InjuryItem, InjuryStatus } from "../../shared/types";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { ViewError, ViewLoader } from "./ViewState";
-import { useAppDispatch, useAppSelector } from "../store";
-import { loadInjuries } from "../reducers/injuries";
 import { HeartCrack, Calendar, Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 20;
@@ -15,12 +13,34 @@ interface InjuriesViewProps {
 }
 
 export default function InjuriesView({ onOpenPlayerByName, onShowToast }: InjuriesViewProps) {
-  const dispatch = useAppDispatch();
-  const { injuries, clubs, loading, error } = useAppSelector((state) => state.injuries);
+  const [injuries, setInjuries] = useState<InjuryItem[]>([]);
+  const [clubs, setClubs] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadInjuryItems = useCallback(() => {
+    fetch("/api/injuries")
+      .then((res) => {
+        if (!res.ok) throw new Error("Chargement impossible");
+        return res.json();
+      })
+      .then((data: { injuries: InjuryItem[]; clubs: string[] }) => {
+        setInjuries(data.injuries);
+        setClubs(data.clubs);
+        setError(null);
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Chargement impossible"))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
-    dispatch(loadInjuries());
-  }, [dispatch]);
+    loadInjuryItems();
+  }, [loadInjuryItems]);
+
+  const retryInjuryItems = useCallback(() => {
+    setLoading(true);
+    loadInjuryItems();
+  }, [loadInjuryItems]);
 
   const [selectedClub, setSelectedClub] = useState("Tous les clubs");
   const [activeStatusFilter, setActiveStatusFilter] = useState<"Tous" | "Absent" | "Reprise">(
@@ -116,7 +136,7 @@ export default function InjuriesView({ onOpenPlayerByName, onShowToast }: Injuri
       </header>
 
       {loading && <ViewLoader label="Chargement du centre des blessures..." />}
-      {error && <ViewError message={error} onRetry={() => dispatch(loadInjuries())} />}
+      {error && <ViewError message={error} onRetry={retryInjuryItems} />}
 
       {/* Filter Bar */}
       <section className="bg-surface-elevated p-5 rounded-2xl border border-white/5 shadow-xl sticky top-[72px] z-30 backdrop-blur-md">
