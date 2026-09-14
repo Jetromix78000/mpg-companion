@@ -10,6 +10,7 @@ const config: Config = {
   transform: {
     "^.+\\.ts$": ["ts-jest", { useESM: true }],
   },
+  testMatch: ["**/backend/routes/unit-test/**/*.test.ts"],
 };
 
 export default config;
