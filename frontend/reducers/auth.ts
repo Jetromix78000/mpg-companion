@@ -3,13 +3,13 @@ import { callApi } from "../api";
 
 const TOKEN_KEY = "mpg:token";
 
-export interface AuthUser {
+export type AuthUser = {
   id: string;
   email: string;
   displayName: string | null;
-}
+};
 
-interface AuthState {
+type AuthState = {
   user: AuthUser | null;
   token: string | null;
   /**
@@ -18,7 +18,7 @@ interface AuthState {
    */
   loading: boolean;
   isLoginOpen: boolean;
-}
+};
 
 /**
  * L'utilisateur navigue en mode privé, où localStorage peut lever une erreur.
@@ -53,10 +53,10 @@ const INITIAL_STATE: AuthState = {
   isLoginOpen: false,
 };
 
-interface AuthResponse {
+type AuthResponse = {
   user: AuthUser;
   token: string;
-}
+};
 
 /**
  * L'utilisateur ouvre l'application avec un token en localStorage.

@@ -7,11 +7,21 @@ import { resultsCleared, searchPlayers } from "../reducers/players";
 import { Search, ArrowUpRight, ChevronLeft, ChevronRight, AlertCircle, Trophy } from "lucide-react";
 import { normalizeText } from "../../shared/search";
 
-interface DashboardViewProps {
+// IMPLICITE
+
+/**
+ * En TS, lors de l'INITIALISATION d'un composant React, on veut préciser 3 infos
+ * (précédé d'un marqueu) :
+ * 1/ Le NOM de la variavle précédé const / let (DEFINITION)
+ * 2/ Le TYPE de la variable précédé (TYPE)
+ * 3/ La VALEUR de la variable précédé (ASSIGNATION)
+ */
+
+type DashboardViewProps = {
   onSelectPlayer: (player: Player) => void;
   onSearchQuery: (query: string) => void;
   onShowToast: (message: string, type?: "success" | "warning") => void;
-}
+};
 
 /**
  * L'utilisateur tape dans la barre de recherche du tableau de bord.

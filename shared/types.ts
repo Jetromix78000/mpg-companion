@@ -13,7 +13,7 @@ export enum InjuryStatus {
   Suspendu = "Suspendu",
 }
 
-export interface Player {
+export type Player = {
   id: string;
   name: string;
   fullName: string;
@@ -53,9 +53,9 @@ export interface Player {
     }[];
     impact: string;
   };
-}
+};
 
-export interface TransferMovement {
+export type TransferMovement = {
   id: string;
   playerName: string;
   avatarUrl: string;
@@ -71,9 +71,9 @@ export interface TransferMovement {
   type: "Official" | "Rumor" | "Prolongation";
   confidence?: number; // 0 to 100 for rumors
   statusLabel?: string; // e.g. "Dossier très chaud", "Négociations", "Refusé", "Quasi-bouclé"
-}
+};
 
-export interface InjuryItem {
+export type InjuryItem = {
   id: string;
   playerName: string;
   avatarUrl: string;
@@ -85,5 +85,5 @@ export interface InjuryItem {
   estimatedReturn: string;
   status: InjuryStatus;
   confidence: number; // 0-100
-}
+};
 

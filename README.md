@@ -78,7 +78,7 @@ _Diagramme Excalidraw — source éditable : [docs/diagrams/schema-simple.excali
 
 ### 1. Architecture globale
 
-`auth.ts` et `favorite.ts` parlent à MongoDB (`User`, `Favorite`). Chaque route data (`players.ts`, `dashboard.ts`, `transfers.ts`, `injuries.ts`, `football.ts`) répond avec le mock déclaré en tête de fichier (`MOCK_PLAYERS`, `MOCK_DASHBOARD`, `MOCK_TRANSFER`, `MOCK_INJURIES`, `MOCK_STATS`/`MOCK_FOOTBALL`) : aucun appel réseau sortant, aucune dépendance externe. `DashboardView`, `MarketView`, `InjuriesView` et `ProfileView` (favoris) les appellent avec un `fetch()` direct — pas de Redux, pas de `callApi` pour celles-là. `favorite.ts` est monté deux fois dans `app.ts` (`/api/favourites` et `/api/favorites`) ; seule la seconde route sert réellement, la première est morte.
+`auth.ts` et `favorite.ts` parlent à MongoDB (`User`, `Favorite`). Chaque route data (`players.ts`, `dashboard.ts`, `transfers.ts`, `injuries.ts`, `football.ts`) répond avec le mock déclaré en tête de fichier (`MOCK_PLAYERS`, `MOCK_DASHBOARD`, `MOCK_TRANSFER`, `MOCK_INJURIES`, `MOCK_STATS`/`MOCK_FOOTBALL`) : aucun appel réseau sortant, aucune dépendance externe. `DashboardView`, `MarketView`, `InjuriesView` et `ProfileView` (favoris) les appellent avec un `fetch()` direct — pas de Redux, pas de `callApi` pour celles-là.
 
 ![Architecture globale](docs/diagrams/architecture-globale.png)
 

@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/tool
 import { callApi } from "../api";
 import type { Player } from "../../shared/types";
 
-interface PlayersState {
+type PlayersState = {
   /**
    * L'utilisateur tape une recherche.
    * Les résultats alimentent aussi la liste d'autocomplétion.
@@ -15,7 +15,7 @@ interface PlayersState {
   selected: Player | null;
   loading: boolean;
   error: string | null;
-}
+};
 
 const INITIAL_STATE: PlayersState = { results: [], selected: null, loading: false, error: null };
 

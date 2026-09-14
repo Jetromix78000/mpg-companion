@@ -3,14 +3,14 @@ import { useAppSelector } from "../store";
 import { useAuth } from "./useAuth";
 import type { Player } from "../../shared/types";
 
-export interface FavoritePlayer {
+export type FavoritePlayer = {
   playerId: string;
   playerName: string;
   playerFullName: string;
   team: string;
   avatarUrl?: string;
   position: string;
-}
+};
 
 /**
  * L'utilisateur ouvre une vue qui affiche ou modifie ses favoris

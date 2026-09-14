@@ -1,11 +1,11 @@
 import { Schema, model, type HydratedDocument } from "mongoose";
 
-export interface UserAttributes {
+export type UserAttributes = {
   email: string;
   passwordHash: string;
   token: string | null;
   displayName?: string;
-}
+};
 
 export type UserDocument = HydratedDocument<UserAttributes>;
 

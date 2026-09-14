@@ -6,14 +6,14 @@ import { HeartCrack, Calendar, Search, ChevronLeft, ChevronRight } from "lucide-
 
 const PAGE_SIZE = 20;
 
-interface InjuriesViewProps {
+type InjuriesViewProps = {
   /**
    * L'utilisateur clique une ligne de blessure.
    * Le joueur est recherché côté serveur, puis sa fiche s'ouvre.
    */
   onOpenPlayerByName: (name: string) => void;
   onShowToast: (message: string, type?: "success" | "warning") => void;
-}
+};
 
 export default function InjuriesView({ onOpenPlayerByName, onShowToast }: InjuriesViewProps) {
   const [injuries, setInjuries] = useState<InjuryItem[]>([]);

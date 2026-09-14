@@ -4,7 +4,7 @@ import { Router } from "express";
  * L'utilisateur ouvre la fiche détaillée d'un joueur.
  * Ces champs composent la réponse qu'il reçoit.
  */
-interface PlayerFootballStats {
+type PlayerFootballStats = {
   player: {
     id: number;
     name: string;
@@ -43,7 +43,7 @@ interface PlayerFootballStats {
     isCurrentlyInjured: boolean;
     history: { date: string; type: string; reason: string; team: string; fixtureId: number }[];
   };
-}
+};
 
 const SEASON = 2026;
 

@@ -33,11 +33,11 @@ function verifyPassword(plain: string, passwordHash: string): Promise<boolean> {
   return bcrypt.compare(plain, passwordHash);
 }
 
-export interface AuthenticatedUser {
+export type AuthenticatedUser = {
   id: string;
   email: string;
   displayName: string | null;
-}
+};
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

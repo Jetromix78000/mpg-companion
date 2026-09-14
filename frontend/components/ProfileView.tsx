@@ -14,14 +14,14 @@ import {
   Star,
 } from "lucide-react";
 
-interface ProfileViewProps {
+type ProfileViewProps = {
   /**
    * L'utilisateur ouvre l'onglet Stats sans avoir sélectionné de joueur.
    * player reste null, un écran vide s'affiche à la place d'une fiche.
    */
   player: Player | null;
   onShowToast: (message: string, type?: "success" | "warning") => void;
-}
+};
 
 /**
  * L'utilisateur ouvre l'onglet Stats sans avoir cherché de joueur.

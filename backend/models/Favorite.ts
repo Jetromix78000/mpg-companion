@@ -1,6 +1,6 @@
 import { Schema, model, type HydratedDocument, Types } from "mongoose";
 
-export interface FavoriteAttributes {
+export type FavoriteAttributes = {
   user: Types.ObjectId;
   playerId: string;
   playerName: string;
@@ -10,7 +10,7 @@ export interface FavoriteAttributes {
   position: string;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
 export type FavoriteDocument = HydratedDocument<FavoriteAttributes>;
 

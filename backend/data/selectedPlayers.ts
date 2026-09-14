@@ -3,12 +3,12 @@
 // via GET /players?search=...&league=61&season=2024.
 // Saison figée à 2024 : le plan gratuit API-FOOTBALL ne couvre que 2022-2024.
 
-export interface SelectedPlayer {
+export type SelectedPlayer = {
   apiFootballId: number;
   teamId: number;
   displayName: string;
   club: string;
-}
+};
 
 export const CURRENT_SEASON = 2024;
 export const LIGUE1_ID = 61;

@@ -6,14 +6,14 @@ import { ClubLogo } from "./ClubLogo";
 import { ViewError, ViewLoader } from "./ViewState";
 import { ArrowRight, RefreshCw, CheckCircle, TrendingUp, XCircle } from "lucide-react";
 
-interface MarketViewProps {
+type MarketViewProps = {
   /**
    * L'utilisateur clique une carte de transfert.
    * Le joueur est recherché côté serveur, puis sa fiche s'ouvre.
    */
   onOpenPlayerByName: (name: string) => void;
   onShowToast: (message: string, type?: "success" | "warning") => void;
-}
+};
 
 const PAGE_SIZE = 20;
 

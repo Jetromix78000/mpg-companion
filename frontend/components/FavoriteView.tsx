@@ -3,9 +3,9 @@ import { useAuth } from "../auth/useAuth";
 import { useFavorites } from "../auth/useFavorites";
 import { PlayerAvatar } from "./PlayerAvatar";
 
-interface FavoriteViewProps {
+type FavoriteViewProps = {
   onOpenPlayerByName: (query: string) => void;
-}
+};
 
 const FavoriteView: React.FC<FavoriteViewProps> = ({ onOpenPlayerByName }) => {
   const { user } = useAuth();

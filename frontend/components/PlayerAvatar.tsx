@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 
-interface PlayerAvatarProps {
+type PlayerAvatarProps = {
   src?: string;
   name: string;
   className?: string;
-}
+};
 
 export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   src,

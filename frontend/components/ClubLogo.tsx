@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Shield } from "lucide-react";
 
-interface ClubLogoProps {
+type ClubLogoProps = {
   src?: string;
   name: string;
   className?: string;
-}
+};
 
 /**
  * L'utilisateur voit un club sans écusson ou dont l'image casse.
