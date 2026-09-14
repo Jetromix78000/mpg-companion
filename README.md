@@ -204,4 +204,4 @@ mpg-companion/
 
 ## Note sur cette documentation
 
-L'architecture globale et les flux sont dessinés avec le toolkit Excalidraw (`mcp-excalidraw-server`, canvas local sur `http://127.0.0.1:3005` — le port 3000 est déjà pris par le backend en dev). Les sources éditables `.excalidraw` sont versionnées dans [docs/diagrams/](docs/diagrams/) — importez-les dans le canvas (`import <fichier>.excalidraw`) pour les modifier, puis ré-exportez le PNG. Les diagrammes des composants frontend et des vues restent en Mermaid (natif dans GitHub et la plupart des visualiseurs Markdown).
+L'architecture globale et les flux sont dessinés avec le toolkit Excalidraw (`mcp-excalidraw-server`, schéma local sur `http://127.0.0.1:3005` — le port 3000 est déjà pris par le backend en dev). Les sources éditables `.excalidraw` sont versionnées dans [docs/diagrams/](docs/diagrams/) — importez-les dans le canvas (`import <fichier>.excalidraw`) pour les modifier, puis ré-exportez le PNG. Les diagrammes des composants frontend et des vues restent en Mermaid (natif dans GitHub et la plupart des visualiseurs Markdown).
