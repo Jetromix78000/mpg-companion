@@ -1,0 +1,14 @@
+# La CLI Vercel n'applique pas .gitignore : sans ce fichier, `vercel deploy`
+# enverrait .env (identifiants MongoDB) avec les sources.
+.env*
+!.env.example
+node_modules/
+dist/
+coverage/
+.cache/
+.claude/
+.impeccable/
+CLAUDE.md
+wireframes/
+*.log
+.DS_Store
